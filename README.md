@@ -314,10 +314,6 @@ If cataloging isn't working:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-[Add your license here]
-
 ## Acknowledgments
 
 - Built for scraping WPRB playlists (https://playlists.wprb.com)
