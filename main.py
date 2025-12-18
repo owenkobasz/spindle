@@ -17,6 +17,7 @@ from scraper import playlist_scraper
 from match_playlist_to_library import match_playlist_to_library
 from create_playlist import export_playlist_copies
 from link_finder import TrackMeta, find_share_urls_from_metadata
+from catalog_music import catalog_music
 
 
 def print_separator(char="=", length=60):
@@ -222,6 +223,106 @@ def create_artist_directories(missing_tracks: list[dict], library_root: Path) ->
     print()
 
 
+def catalog_new_music(base_folder: str, library_subpath: str) -> None:
+    """
+    Catalog newly downloaded music from a drop location into the library.
+    
+    Args:
+        base_folder: Base folder containing the library
+        library_subpath: Subpath to the library within base_folder
+    """
+    print_separator()
+    print("CATALOG NEW MUSIC")
+    print_separator()
+    print("This will scan a drop location for music files and organize them")
+    print("into your library structure (Artist/Album/Track).")
+    print()
+    
+    # Get drop location
+    drop_location = prompt_user("Enter drop location (where new music files are)")
+    if not drop_location:
+        print("Error: Drop location is required.")
+        sys.exit(1)
+    
+    drop_path = Path(drop_location).expanduser()
+    if not drop_path.exists():
+        print(f"Error: Drop location does not exist: {drop_path}")
+        sys.exit(1)
+    
+    # Calculate library root path
+    library_root_path = Path(base_folder)
+    if library_subpath:
+        library_root_path = library_root_path / library_subpath
+    library_root_path = library_root_path.resolve()
+    
+    if not library_root_path.exists():
+        print(f"Error: Library root does not exist: {library_root_path}")
+        sys.exit(1)
+    
+    print()
+    print(f"Drop location: {drop_path}")
+    print(f"Library root: {library_root_path}")
+    print()
+    
+    # Ask about move vs copy
+    move_files = prompt_yes_no("Move files to library? (No = copy files)", default=True)
+    
+    # Ask about duplicates
+    skip_duplicates = prompt_yes_no("Skip files that already exist in library?", default=True)
+    
+    print()
+    print("Scanning for audio files...")
+    print("Please wait...")
+    
+    try:
+        result = catalog_music(
+            drop_location=str(drop_path),
+            library_root=str(library_root_path),
+            move_files=move_files,
+            skip_duplicates=skip_duplicates,
+        )
+        
+        print_separator()
+        print("CATALOGING COMPLETE")
+        print_separator()
+        print(f"Total files found: {result['total_files']}")
+        print(f"✓ Cataloged: {result['cataloged']}")
+        print(f"ℹ Skipped: {result['skipped']}")
+        
+        if result['errors']:
+            print()
+            print(f"⚠ {len(result['errors'])} errors occurred:")
+            for error in result['errors'][:10]:  # Show first 10 errors
+                print(f"  - {error}")
+            if len(result['errors']) > 10:
+                print(f"  ... and {len(result['errors']) - 10} more errors")
+        
+        print()
+        
+        # Show some examples of cataloged files
+        cataloged_files = [r for r in result['results'] if r['status'] == 'cataloged']
+        if cataloged_files:
+            print("Sample of cataloged files:")
+            for item in cataloged_files[:5]:
+                print(f"  ✓ {Path(item['source_path']).name} → {Path(item['destination_path']).relative_to(library_root_path)}")
+            if len(cataloged_files) > 5:
+                print(f"  ... and {len(cataloged_files) - 5} more")
+            print()
+        
+        if result['cataloged'] > 0:
+            print("✓ Music successfully cataloged into library!")
+        else:
+            print("ℹ No files were cataloged (all skipped or errors occurred).")
+        
+    except ImportError as e:
+        print(f"Error: {e}")
+        print("Please install mutagen: pip install mutagen")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error cataloging music: {e}")
+        sys.exit(1)
+
+
 def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
     """
     Ask user to confirm skipping each track that still can't be found.
@@ -313,6 +414,25 @@ def main():
     print_separator()
     print()
     
+    # Main menu
+    print_separator()
+    print("MAIN MENU")
+    print_separator()
+    print("1. Scrape playlist and create playlist folder")
+    print("2. Catalog new music into library")
+    print()
+    
+    choice = prompt_user("Select option (1 or 2)", "1").strip()
+    
+    # Get library location early (needed for both workflows)
+    base_folder, library_subpath = get_library_path()
+    
+    if choice == "2":
+        # Catalog music workflow
+        catalog_new_music(base_folder, library_subpath)
+        return
+    
+    # Original playlist scraping workflow (choice == "1" or default)
     # Step 1: Get playlist URL
     print_separator()
     print("STEP 1: PLAYLIST URL")
@@ -339,12 +459,10 @@ def main():
         print(f"Error scraping playlist: {e}")
         sys.exit(1)
     
-    # Step 3: Get library location and match tracks
+    # Step 3: Match tracks to library (library path already obtained)
     print_separator()
     print("STEP 3: MATCHING TRACKS TO LIBRARY")
     print_separator()
-    
-    base_folder, library_subpath = get_library_path()
     
     print()
     print("Matching tracks to library...")

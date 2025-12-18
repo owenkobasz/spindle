@@ -12,9 +12,16 @@ TL/DR: A Python tool to scrape playlists from WPRB (and other Spinitron-based pl
   - Track numbers in filenames (e.g., "02. Song.flac")
   - Album name variations (e.g., "Album - EP" vs "Album")
   - Case and punctuation differences
+- **Music Cataloging**: Automatically organize newly downloaded music files into your library:
+  - Extracts metadata from audio tags (ID3, Vorbis, iTunes)
+  - Falls back to filename/path parsing when tags are missing
+  - Organizes files into `Artist/Album/Track` structure
+  - Handles duplicates intelligently
+  - Supports both move and copy operations
 - **Interactive Workflow**: Step-by-step terminal interface that guides you through the process
 - **Missing Track Handling**: 
   - Automatically create artist directories for missing tracks
+  - Shows Amazon Music links for missing tracks
   - Confirm skipping tracks that can't be found
 - **Playlist Creation**: Copy matched tracks to a new folder with numbered filenames in playlist order
 
@@ -30,10 +37,16 @@ TL/DR: A Python tool to scrape playlists from WPRB (and other Spinitron-based pl
 1. Clone this repository:
 ```bash
 git clone <repository-url>
-cd WPRB-Scraper
+cd spindle
 ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment (recommended):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -48,12 +61,21 @@ Run the main script for an interactive workflow:
 python3 main.py
 ```
 
-The script will guide you through:
+The script presents a main menu with two options:
+
+**Option 1: Scrape playlist and create playlist folder**
 1. Entering the playlist URL
 2. Scraping the playlist
 3. Matching tracks to your library
-4. Handling missing tracks
+4. Handling missing tracks (with Amazon Music links)
 5. Creating the playlist folder
+
+**Option 2: Catalog new music into library**
+1. Entering your library location
+2. Entering the drop location (where new music files are)
+3. Choosing to move or copy files
+4. Choosing whether to skip duplicates
+5. Automatically organizing files into `Artist/Album/Track` structure
 
 ### Library Structure
 
@@ -65,14 +87,23 @@ Library/
       Track Name.ext
 ```
 
-### Example Workflow
+### Example Workflows
 
+**Playlist Scraping:**
 ```bash
 $ python3 main.py
 
 ============================================================
 WPRB PLAYLIST SCRAPER
 ============================================================
+
+============================================================
+MAIN MENU
+============================================================
+1. Scrape playlist and create playlist folder
+2. Catalog new music into library
+
+Select option (1 or 2) [1]: 1
 
 ============================================================
 STEP 1: PLAYLIST URL
@@ -88,6 +119,34 @@ Please wait...
 ✓ Found 31 tracks
 
 ...
+```
+
+**Music Cataloging:**
+```bash
+$ python3 main.py
+
+============================================================
+WPRB PLAYLIST SCRAPER
+============================================================
+
+============================================================
+MAIN MENU
+============================================================
+1. Scrape playlist and create playlist folder
+2. Catalog new music into library
+
+Select option (1 or 2) [1]: 2
+
+============================================================
+CATALOG NEW MUSIC
+============================================================
+Enter drop location (where new music files are): ~/Downloads/Music
+Move files to library? (No = copy files) [Y/n]: Y
+Skip files that already exist in library? [Y/n]: Y
+
+Scanning for audio files...
+✓ Cataloged: 15 files
+ℹ Skipped: 2 files (duplicates)
 ```
 
 ### Command Line Options
@@ -126,14 +185,28 @@ result = export_playlist_copies(
 )
 ```
 
+**Catalog new music:**
+```python
+from catalog_music import catalog_music
+
+result = catalog_music(
+    drop_location="/path/to/downloads",
+    library_root="/path/to/library",
+    move_files=True,  # False to copy instead
+    skip_duplicates=True,
+)
+```
+
 ## Project Structure
 
 ```
-WPRB-Scraper/
-├── main.py                          # Main interactive script
+spindle/
+├── main.py                          # Main interactive script with menu
 ├── scraper.py                        # Playlist scraping functionality
 ├── match_playlist_to_library.py     # Library matching logic
 ├── create_playlist.py                # Playlist folder creation
+├── catalog_music.py                  # Music cataloging and organization
+├── link_finder.py                    # Amazon Music link finder for missing tracks
 ├── requirements.txt                  # Python dependencies
 ├── sample_data/                      # Sample playlist data for testing
 │   └── sample_playlist_1
@@ -159,9 +232,22 @@ The matching algorithm handles various naming inconsistencies:
 
 When tracks aren't found:
 1. The script lists all missing tracks with candidate suggestions
-2. Offers to create artist directories in your library
-3. After you add tracks, re-matches to verify
-4. Allows you to confirm skipping tracks that still can't be found
+2. Shows Amazon Music links for tracks and albums (when available)
+3. Offers to create artist directories in your library
+4. After you add tracks, re-matches to verify
+5. Allows you to confirm skipping tracks that still can't be found
+
+### Music Cataloging
+
+The cataloging feature automatically organizes newly downloaded music:
+
+- **Metadata Extraction**: Reads ID3 tags (MP3), Vorbis comments (FLAC, OGG), and iTunes tags (M4A)
+- **Smart Fallback**: When tags are missing, infers metadata from:
+  - File path structure (e.g., `Artist/Album/Track.mp3`)
+  - Filename patterns (e.g., `Artist - Track.mp3`, `01. Track.mp3`)
+- **Duplicate Detection**: Checks if files already exist in library before cataloging
+- **Flexible Operations**: Choose to move or copy files
+- **Track Numbering**: Preserves track numbers from tags or filenames
 
 ## Testing
 
@@ -191,6 +277,13 @@ The tool prompts for your library location, but you can also set defaults in the
 The tool supports these audio file formats:
 - `.mp3`, `.m4a`, `.flac`, `.wav`, `.aiff`, `.aif`, `.ogg`, `.opus`, `.alac`
 
+### Dependencies
+
+- `requests` - HTTP requests for scraping
+- `beautifulsoup4` - HTML parsing
+- `mutagen` - Audio metadata extraction (for cataloging)
+- `pytest` - Testing framework (optional, for development)
+
 ## Troubleshooting
 
 ### Tracks Not Matching
@@ -208,6 +301,15 @@ If scraping fails:
 2. Check that the site uses Spinitron (the scraper is designed for Spinitron-based sites)
 3. The site structure may have changed - check the HTML selectors in `scraper.py`
 
+### Cataloging Issues
+
+If cataloging isn't working:
+1. Ensure `mutagen` is installed: `pip install mutagen`
+2. Check that audio files have readable metadata tags
+3. Files without tags will use filename/path inference - ensure filenames are descriptive
+4. Verify the drop location path is correct and accessible
+5. Check that the library root path is correct
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -220,5 +322,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - Built for scraping WPRB playlists (https://playlists.wprb.com)
 - Uses BeautifulSoup for HTML parsing
+- Uses Mutagen for audio metadata extraction
 - Designed to work with Spinitron-based playlist systems
 
