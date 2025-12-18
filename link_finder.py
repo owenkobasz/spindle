@@ -221,6 +221,131 @@ def itunes_search_seed(track: TrackMeta, session: requests.Session) -> Optional[
 
 
 # ----------------------------
+# Album seed lookup: Deezer
+# ----------------------------
+
+def deezer_search_album_seed(track: TrackMeta, session: requests.Session) -> Optional[Dict[str, Any]]:
+    """
+    Return a dict with: seed_url, provider, confidence, raw
+    or None if no good match.
+    """
+    if not track.album:
+        return None
+    
+    # Deezer search endpoint for albums
+    q = f'{track.artist} {track.album}'
+    url = "https://api.deezer.com/search/album?" + urlencode({"q": q, "limit": 10})
+
+    time.sleep(SLEEP_BETWEEN_CALLS)
+    r = session.get(url, timeout=20)
+    r.raise_for_status()
+    data = r.json()
+
+    best = None
+    best_conf = 0.0
+
+    for item in data.get("data", []):
+        candidate_artist = (item.get("artist") or {}).get("name", "")
+        candidate_album = item.get("title", "")
+        
+        artist_score = _token_overlap_score(track.artist, candidate_artist)
+        album_score = _token_overlap_score(track.album, candidate_album)
+        
+        # For albums, we care more about album name match, but artist should be reasonable
+        confidence = (0.7 * album_score) + (0.3 * artist_score)
+        good = (album_score >= 0.6 and artist_score >= 0.4) or confidence >= 0.7
+        
+        if good and confidence > best_conf:
+            album_url = item.get("link")  # Deezer album link
+            if album_url:
+                best = {
+                    "artist": candidate_artist,
+                    "album": candidate_album,
+                    "seed_url": album_url,
+                }
+                best_conf = confidence
+
+    if not best:
+        return None
+
+    return {
+        "provider": "deezer",
+        "seed_url": best["seed_url"],
+        "confidence": round(best_conf, 3),
+        "matched": {
+            "artist": best["artist"],
+            "album": best["album"],
+        },
+        "raw": best,
+    }
+
+
+# ----------------------------
+# Album seed lookup: iTunes Search API
+# ----------------------------
+
+def itunes_search_album_seed(track: TrackMeta, session: requests.Session) -> Optional[Dict[str, Any]]:
+    """
+    Return a dict with: seed_url, provider, confidence, raw
+    or None if no good match.
+    """
+    if not track.album:
+        return None
+    
+    # iTunes Search API endpoint for albums
+    term = f"{track.artist} {track.album}"
+    params = {
+        "term": term,
+        "entity": "album",
+        "limit": 10,
+    }
+    url = "https://itunes.apple.com/search?" + urlencode(params)
+
+    time.sleep(SLEEP_BETWEEN_CALLS)
+    r = session.get(url, timeout=20)
+    r.raise_for_status()
+    data = r.json()
+
+    best = None
+    best_conf = 0.0
+
+    for item in data.get("results", []):
+        candidate_artist = item.get("artistName", "")
+        candidate_album = item.get("collectionName", "")
+        
+        artist_score = _token_overlap_score(track.artist, candidate_artist)
+        album_score = _token_overlap_score(track.album, candidate_album)
+        
+        # For albums, we care more about album name match, but artist should be reasonable
+        confidence = (0.7 * album_score) + (0.3 * artist_score)
+        good = (album_score >= 0.6 and artist_score >= 0.4) or confidence >= 0.7
+        
+        if good and confidence > best_conf:
+            album_url = item.get("collectionViewUrl")  # iTunes album URL
+            if album_url:
+                best = {
+                    "artist": candidate_artist,
+                    "album": candidate_album,
+                    "seed_url": album_url,
+                }
+                best_conf = confidence
+
+    if not best:
+        return None
+
+    return {
+        "provider": "itunes",
+        "seed_url": best["seed_url"],
+        "confidence": round(best_conf, 3),
+        "matched": {
+            "artist": best["artist"],
+            "album": best["album"],
+        },
+        "raw": best,
+    }
+
+
+# ----------------------------
 # Link expansion: Odesli/Songlink
 # ----------------------------
 
@@ -318,7 +443,7 @@ def find_share_urls_from_metadata(
                 save_cache(cache)
             return result
 
-        # 2) Expand
+        # 2) Expand track links
         aggregated = odesli_expand(seed["seed_url"], session)
 
         # 3) Pull out your target platforms (keys vary; keep both raw and filtered)
@@ -332,6 +457,30 @@ def find_share_urls_from_metadata(
             "tidal": links.get("tidal"),
         }
 
+        # 4) Search for album URLs if album is provided
+        album_seed = None
+        album_aggregated = None
+        album_targets = {}
+        album_links_by_platform = {}
+        
+        if track.album:
+            album_seed = deezer_search_album_seed(track, session)
+            if album_seed is None:
+                album_seed = itunes_search_album_seed(track, session)
+            
+            if album_seed:
+                album_aggregated = odesli_expand(album_seed["seed_url"], session)
+                album_links = album_aggregated["links_by_platform"]
+                
+                album_targets = {
+                    "amazon_music": album_links.get("amazonMusic") or album_links.get("amazon"),
+                    "soundcloud": album_links.get("soundcloud"),
+                    "qobuz": album_links.get("qobuz"),
+                    "deezer": album_links.get("deezer"),
+                    "tidal": album_links.get("tidal"),
+                }
+                album_links_by_platform = album_links
+
         result = {
             "ok": True,
             "track": {"artist": track.artist, "title": track.title, "album": track.album},
@@ -342,6 +491,13 @@ def find_share_urls_from_metadata(
             },
             # Keep full links map if you want everything, not just the targets
             "links_by_platform": links,
+            # Album links
+            "album_seed": album_seed,
+            "album_aggregated": {
+                "page_url": album_aggregated.get("page_url") if album_aggregated else None,
+                "targets": album_targets,
+            } if album_aggregated else None,
+            "album_links_by_platform": album_links_by_platform if album_links_by_platform else {},
         }
 
         if use_cache and cache is not None:

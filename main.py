@@ -11,9 +11,12 @@ This script provides an interactive workflow to:
 import sys
 from pathlib import Path
 
+import requests
+
 from scraper import playlist_scraper
 from match_playlist_to_library import match_playlist_to_library
 from create_playlist import export_playlist_copies
+from link_finder import TrackMeta, find_share_urls_from_metadata
 
 
 def print_separator(char="=", length=60):
@@ -92,6 +95,7 @@ def get_library_path() -> tuple[str, str]:
 def display_missing_tracks(match_result: dict) -> list[dict]:
     """
     Display missing tracks and return list of missing track info.
+    Includes Amazon Music links for tracks and albums when available.
     
     Returns:
         List of track dictionaries that are missing
@@ -104,16 +108,60 @@ def display_missing_tracks(match_result: dict) -> list[dict]:
     print_separator()
     print(f"MISSING TRACKS ({len(missing)} of {match_result['summary']['total_tracks']})")
     print_separator()
+    print("Fetching Amazon Music links...")
+    print()
     
-    for i, track in enumerate(missing, 1):
-        print(f"{i}. {track['artist']} - {track['song']}")
-        if track.get('album'):
-            print(f"   Album: {track['album']}")
-        if track.get('candidate_paths'):
-            print(f"   Candidates found:")
-            for path in track['candidate_paths'][:3]:  # Show first 3 candidates
-                print(f"     - {Path(path).name}")
-        print()
+    # Create a session for API calls
+    session = requests.Session()
+    
+    try:
+        for i, track in enumerate(missing, 1):
+            print(f"{i}. {track['artist']} - {track['song']}")
+            if track.get('album'):
+                print(f"   Album: {track['album']}")
+            
+            # Fetch links for this track
+            try:
+                track_meta = TrackMeta(
+                    artist=track.get('artist', ''),
+                    title=track.get('song', ''),
+                    album=track.get('album')
+                )
+                link_result = find_share_urls_from_metadata(
+                    track_meta,
+                    session=session,
+                    use_cache=True
+                )
+                
+                # Display Amazon Music links if available
+                if link_result.get('ok'):
+                    # Track link
+                    track_amazon = link_result.get('aggregated', {}).get('targets', {}).get('amazon_music')
+                    if track_amazon:
+                        print(f"   Track: {track_amazon}")
+                    
+                    # Album link
+                    album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music') if link_result.get('album_aggregated') else None
+                    if album_amazon:
+                        print(f"   Album: {album_amazon}")
+                    
+                    # If no Amazon links found, indicate that
+                    if not track_amazon and not album_amazon:
+                        print(f"   (Amazon Music links not available)")
+                else:
+                    print(f"   (Could not find links)")
+            except Exception as e:
+                # Silently handle errors - just don't show links
+                print(f"   (Error fetching links)")
+            
+            if track.get('candidate_paths'):
+                print(f"   Candidates found:")
+                for path in track['candidate_paths'][:3]:  # Show first 3 candidates
+                    print(f"     - {Path(path).name}")
+            print()
+    
+    finally:
+        session.close()
     
     return missing
 
@@ -177,6 +225,7 @@ def create_artist_directories(missing_tracks: list[dict], library_root: Path) ->
 def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
     """
     Ask user to confirm skipping each track that still can't be found.
+    Includes Amazon Music links for tracks and albums when available.
     
     Args:
         still_missing: List of tracks that are still missing after re-matching
@@ -197,22 +246,57 @@ def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
     tracks_to_skip = []
     tracks_to_keep = []
     
-    for i, track in enumerate(still_missing, 1):
-        artist = track.get('artist', 'Unknown')
-        song = track.get('song', 'Unknown')
-        album = track.get('album', '')
-        
-        print(f"{i}/{len(still_missing)}. {artist} - {song}")
-        if album:
-            print(f"    Album: {album}")
-        
-        if prompt_yes_no("    Skip this track?", default=False):
-            tracks_to_skip.append(track)
-            print("    → Will be skipped")
-        else:
-            tracks_to_keep.append(track)
-            print("    → Will be kept (operation will be cancelled)")
-        print()
+    # Create a session for API calls
+    session = requests.Session()
+    
+    try:
+        for i, track in enumerate(still_missing, 1):
+            artist = track.get('artist', 'Unknown')
+            song = track.get('song', 'Unknown')
+            album = track.get('album', '')
+            
+            print(f"{i}/{len(still_missing)}. {artist} - {song}")
+            if album:
+                print(f"    Album: {album}")
+            
+            # Fetch links for this track
+            try:
+                track_meta = TrackMeta(
+                    artist=track.get('artist', ''),
+                    title=track.get('song', ''),
+                    album=track.get('album')
+                )
+                link_result = find_share_urls_from_metadata(
+                    track_meta,
+                    session=session,
+                    use_cache=True
+                )
+                
+                # Display Amazon Music links if available
+                if link_result.get('ok'):
+                    # Track link
+                    track_amazon = link_result.get('aggregated', {}).get('targets', {}).get('amazon_music')
+                    if track_amazon:
+                        print(f"    Track: {track_amazon}")
+                    
+                    # Album link
+                    album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music') if link_result.get('album_aggregated') else None
+                    if album_amazon:
+                        print(f"    Album: {album_amazon}")
+            except Exception:
+                # Silently handle errors - just don't show links
+                pass
+            
+            if prompt_yes_no("    Skip this track?", default=False):
+                tracks_to_skip.append(track)
+                print("    → Will be skipped")
+            else:
+                tracks_to_keep.append(track)
+                print("    → Will be kept (operation will be cancelled)")
+            print()
+    
+    finally:
+        session.close()
     
     if tracks_to_keep:
         print(f"⚠ {len(tracks_to_keep)} tracks will not be skipped.")
