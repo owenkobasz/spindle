@@ -20,13 +20,14 @@ pip install -r requirements.txt
 
 ### Run all tests:
 ```bash
-pytest test_scraper.py test_match_playlist_to_library.py -v
+pytest test_scraper.py test_match_playlist_to_library.py test_main.py -v
 ```
 
 ### Run tests for a specific file:
 ```bash
 pytest test_scraper.py -v
 pytest test_match_playlist_to_library.py -v
+pytest test_main.py -v
 ```
 
 ### Run a specific test:
@@ -37,7 +38,7 @@ pytest test_match_playlist_to_library.py::TestNormFunction::test_norm_basic -v
 
 ### Run with coverage:
 ```bash
-pytest --cov=. --cov-report=html test_scraper.py test_match_playlist_to_library.py
+pytest --cov=. --cov-report=html test_scraper.py test_match_playlist_to_library.py test_main.py
 ```
 
 ## Test Structure
@@ -54,6 +55,14 @@ Tests for the library matching functionality:
 - Audio file iteration
 - Index building
 - Main `match_playlist_to_library` function with temporary directories
+
+### `test_main.py`
+Tests for the main.py workflow functions:
+- Utility functions (`safe_slug`, `derive_artifact_stem`, `load_json`, `save_json`)
+- Validation functions (`validate_url`, `validate_file_path`, `validate_json_file`)
+- Artifact listing (`list_artifacts`)
+- Stage functions (`run_scrape`, `run_match`, `run_links`, `run_export`)
+- Error handling and edge cases
 
 ## Modifying Tests
 

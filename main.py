@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-WPRB Playlist Scraper - Main Entry Point
+Spindle - Main Entry Point
 
 This script provides an interactive workflow to:
 1. Scrape a playlist from a URL
@@ -8,7 +8,11 @@ This script provides an interactive workflow to:
 3. Create a playlist folder with numbered tracks
 """
 
+import json
+import re
+import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -20,10 +24,154 @@ from link_finder import TrackMeta, find_share_urls_from_metadata
 from catalog_music import catalog_music
 
 
+# ----------------------------
+# Artifacts and JSON utilities
+# ----------------------------
+
+ARTIFACTS_DIR = Path("artifacts")
+
+
+def safe_slug(text: str) -> str:
+    """
+    Convert text to a filesystem-safe slug.
+    
+    Args:
+        text: Text to convert to slug
+    
+    Returns:
+        Lowercase slug with alphanumeric characters and dashes only
+    """
+    if not text:
+        return "unknown"
+    
+    # Normalize to lowercase
+    slug = text.lower()
+    
+    # Replace spaces and common separators with dashes
+    slug = re.sub(r'[\s_]+', '-', slug)
+    
+    # Keep only alphanumeric and dashes
+    slug = re.sub(r'[^a-z0-9-]', '', slug)
+    
+    # Collapse multiple dashes
+    slug = re.sub(r'-+', '-', slug)
+    
+    # Strip leading/trailing dashes
+    slug = slug.strip('-')
+    
+    return slug or "unknown"
+
+
+def derive_artifact_stem(meta: dict) -> str:
+    """
+    Derive an artifact filename stem from playlist metadata.
+    
+    Args:
+        meta: Playlist metadata dict
+    
+    Returns:
+        Stem like "2025-12-17_lady-love"
+    """
+    # Extract date from fetched_at_utc (YYYY-MM-DD)
+    date_str = ""
+    fetched_at = meta.get("fetched_at_utc", "")
+    if isinstance(fetched_at, str) and len(fetched_at) >= 10:
+        date_str = fetched_at[:10]
+    else:
+        # Fallback to today's date
+        date_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # Extract slug from canonical_url or page_title
+    slug = ""
+    canonical = meta.get("canonical_url", "")
+    if canonical:
+        # Extract slug from URL (e.g., "https://playlists.wprb.com/WPRB/pl/21686552/Lady-Love" -> "lady-love")
+        parts = canonical.rstrip('/').split('/')
+        if parts:
+            slug = safe_slug(parts[-1])
+    
+    if not slug:
+        title = meta.get("page_title") or meta.get("playlist_title", "")
+        slug = safe_slug(title)
+    
+    if not slug:
+        slug = "playlist"
+    
+    return f"{date_str}_{slug}"
+
+
+def load_json(path: Path) -> dict:
+    """
+    Load JSON from a file path.
+    
+    Args:
+        path: Path to JSON file
+    
+    Returns:
+        Parsed JSON dict
+    
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        json.JSONDecodeError: If file is not valid JSON
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"JSON file not found: {path}")
+    
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def save_json(obj: dict, path: Path) -> Path:
+    """
+    Save a dict to JSON file.
+    
+    Args:
+        obj: Dict to save
+        path: Path to save to
+    
+    Returns:
+        Path to saved file
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(obj, f, indent=2, ensure_ascii=False)
+    
+    return path
+
+
 def print_separator(char="=", length=60):
     """Print a visual separator line."""
     print(char * length)
 
+
+def print_title(text: str, char="=", length=60):
+    """
+    Print a centered title with separators above and below.
+    
+    Args:
+        text: Text to center
+        char: Character to use for separator (default: "=")
+        length: Length of separator line (default: 60)
+    """
+    print_separator(char, length)
+    # Center the text within the separator length
+    padding = (length - len(text)) // 2
+    print(" " * padding + text)
+    print_separator(char, length)
+
+def print_banner():
+    banner = r"""
+   ███████╗██████╗ ██╗███╗   ██╗██████╗ ██╗     ███████╗
+   ██╔════╝██╔══██╗██║████╗  ██║██╔══██╗██║     ██╔════╝
+   ███████╗██████╔╝██║██╔██╗ ██║██║  ██║██║     █████╗  
+   ╚════██║██╔═══╝ ██║██║╚██╗██║██║  ██║██║     ██╔══╝  
+   ███████║██║     ██║██║ ╚████║██████╔╝███████╗███████╗
+   ╚══════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝
+
+            curated radio → local playlists
+"""
+    print(banner)
 
 def prompt_user(prompt: str, default: str = None) -> str:
     """
@@ -67,9 +215,7 @@ def get_library_path() -> tuple[str, str]:
     Returns:
         Tuple of (base_folder, library_subpath)
     """
-    print_separator()
-    print("LIBRARY LOCATION")
-    print_separator()
+    print_title("LIBRARY LOCATION")
     print("Enter the path to your music library.")
     print("Examples:")
     print("  - If library is at /Volumes/Music Library, enter that path")
@@ -106,9 +252,7 @@ def display_missing_tracks(match_result: dict) -> list[dict]:
     if not missing:
         return []
     
-    print_separator()
-    print(f"MISSING TRACKS ({len(missing)} of {match_result['summary']['total_tracks']})")
-    print_separator()
+    print_title(f"MISSING TRACKS ({len(missing)} of {match_result['summary']['total_tracks']})")
     print("Fetching Amazon Music links...")
     print()
     
@@ -188,9 +332,7 @@ def create_artist_directories(missing_tracks: list[dict], library_root: Path) ->
     if not artists:
         return
     
-    print_separator()
-    print("CREATE ARTIST DIRECTORIES")
-    print_separator()
+    print_title("CREATE ARTIST DIRECTORIES")
     print(f"Found {len(artists)} unique artists with missing tracks:")
     for artist in sorted(artists):
         print(f"  - {artist}")
@@ -231,9 +373,7 @@ def catalog_new_music(base_folder: str, library_subpath: str) -> None:
         base_folder: Base folder containing the library
         library_subpath: Subpath to the library within base_folder
     """
-    print_separator()
-    print("CATALOG NEW MUSIC")
-    print_separator()
+    print_title("CATALOG NEW MUSIC")
     print("This will scan a drop location for music files and organize them")
     print("into your library structure (Artist/Album/Track).")
     print()
@@ -337,9 +477,7 @@ def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
     if not still_missing:
         return []
     
-    print_separator()
-    print("CONFIRM SKIPPING TRACKS")
-    print_separator()
+    print_title("CONFIRM SKIPPING TRACKS")
     print(f"The following {len(still_missing)} tracks still cannot be found:")
     print("You can choose to skip each track or cancel the operation.")
     print()
@@ -407,45 +545,22 @@ def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
     return tracks_to_skip
 
 
-def main():
-    """Main workflow function."""
-    print_separator()
-    print("WPRB PLAYLIST SCRAPER")
-    print_separator()
-    print()
+# ----------------------------
+# Stage functions
+# ----------------------------
+
+def run_scrape(url: str, artifacts_dir: Path) -> Path:
+    """
+    Stage 1: Scrape playlist from URL and save to JSON artifact.
     
-    # Main menu
-    print_separator()
-    print("MAIN MENU")
-    print_separator()
-    print("1. Scrape playlist and create playlist folder")
-    print("2. Catalog new music into library")
-    print()
+    Args:
+        url: Playlist URL to scrape
+        artifacts_dir: Directory to save artifacts
     
-    choice = prompt_user("Select option (1 or 2)", "1").strip()
-    
-    # Get library location early (needed for both workflows)
-    base_folder, library_subpath = get_library_path()
-    
-    if choice == "2":
-        # Catalog music workflow
-        catalog_new_music(base_folder, library_subpath)
-        return
-    
-    # Original playlist scraping workflow (choice == "1" or default)
-    # Step 1: Get playlist URL
-    print_separator()
-    print("STEP 1: PLAYLIST URL")
-    print_separator()
-    url = prompt_user("Enter playlist URL")
-    if not url:
-        print("Error: URL is required.")
-        sys.exit(1)
-    
-    # Step 2: Scrape playlist
-    print_separator()
-    print("STEP 2: SCRAPING PLAYLIST")
-    print_separator()
+    Returns:
+        Path to saved playlist JSON file
+    """
+    print_title("STAGE 1: SCRAPING PLAYLIST")
     print(f"Scraping: {url}")
     print("Please wait...")
     
@@ -453,18 +568,44 @@ def main():
         playlist_data = playlist_scraper(url)
         track_count = playlist_data.get("meta", {}).get("track_count", 0)
         playlist_title = playlist_data.get("meta", {}).get("playlist_title", "Unknown")
+        
+        # Derive artifact filename
+        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        output_path = artifacts_dir / f"{stem}.playlist.json"
+        
+        # Save playlist JSON
+        save_json(playlist_data, output_path)
+        
         print(f"✓ Successfully scraped playlist: {playlist_title}")
         print(f"✓ Found {track_count} tracks")
+        print(f"✓ Saved to: {output_path}")
+        print()
+        
+        return output_path
+        
     except Exception as e:
         print(f"Error scraping playlist: {e}")
-        sys.exit(1)
+        raise
+
+
+def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, artifacts_dir: Path) -> Path:
+    """
+    Stage 2: Match playlist tracks to library and save match report.
     
-    # Step 3: Match tracks to library (library path already obtained)
-    print_separator()
-    print("STEP 3: MATCHING TRACKS TO LIBRARY")
-    print_separator()
+    Args:
+        playlist_json_path: Path to playlist JSON file
+        base_folder: Base folder containing library
+        library_subpath: Subpath to library within base_folder
+        artifacts_dir: Directory to save artifacts
     
-    print()
+    Returns:
+        Path to saved match JSON file
+    """
+    print_title("STAGE 2: MATCHING TRACKS TO LIBRARY")
+    
+    # Load playlist data
+    playlist_data = load_json(playlist_json_path)
+    
     print("Matching tracks to library...")
     print("Please wait...")
     
@@ -477,27 +618,221 @@ def main():
             max_candidates=5,
         )
         
+        # Include original playlist data in match report for Stage 4
+        match_result["playlist_data"] = playlist_data
+        
         found = match_result["summary"]["found"]
         missing = match_result["summary"]["missing"]
         total = match_result["summary"]["total_tracks"]
         
-        print(f"✓ Matched {found} of {total} tracks")
+        # Derive artifact filename (use same stem as playlist)
+        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        output_path = artifacts_dir / f"{stem}.match.json"
         
+        # Save match report
+        save_json(match_result, output_path)
+        
+        print(f"✓ Matched {found} of {total} tracks")
         if missing > 0:
             print(f"⚠ {missing} tracks not found in library")
         else:
             print("✓ All tracks found in library!")
+        print(f"✓ Saved to: {output_path}")
+        print()
+        
+        return output_path
+        
     except Exception as e:
         print(f"Error matching tracks: {e}")
+        raise
+
+
+def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = True) -> Path:
+    """
+    Stage 3: Enrich missing tracks with streaming links.
+    
+    Args:
+        match_json_path: Path to match JSON file
+        artifacts_dir: Directory to save artifacts
+        missing_only: If True, only enrich missing tracks; if False, enrich all tracks
+    
+    Returns:
+        Path to saved enriched JSON file
+    """
+    print_title("STAGE 3: ENRICHING TRACKS WITH STREAMING LINKS")
+    
+    # Load match result
+    match_result = load_json(match_json_path)
+    
+    # Determine which tracks to enrich
+    if missing_only:
+        tracks_to_enrich = [r for r in match_result["results"] if r["match_status"] == "missing"]
+    else:
+        tracks_to_enrich = match_result["results"]
+    
+    if not tracks_to_enrich:
+        print("ℹ No tracks to enrich.")
+        print()
+        return match_json_path
+    
+    print(f"Enriching {len(tracks_to_enrich)} track(s) with streaming links...")
+    print("Please wait...")
+    
+    session = requests.Session()
+    links_found = 0
+    
+    try:
+        for track in tracks_to_enrich:
+            try:
+                track_meta = TrackMeta(
+                    artist=track.get('artist', ''),
+                    title=track.get('song', ''),
+                    album=track.get('album')
+                )
+                link_result = find_share_urls_from_metadata(
+                    track_meta,
+                    session=session,
+                    use_cache=True
+                )
+                
+                # Attach link result to track
+                track["share_links"] = link_result.get("aggregated", {}).get("targets", {}) if link_result.get("ok") else {}
+                track["songlink_page"] = link_result.get("aggregated", {}).get("page_url") if link_result.get("ok") else None
+                track["link_seed"] = link_result.get("seed") if link_result.get("ok") else None
+                
+                if link_result.get("ok"):
+                    links_found += 1
+            except Exception:
+                # Silently handle errors
+                track["share_links"] = {}
+                track["songlink_page"] = None
+                track["link_seed"] = None
+        
+        # Derive artifact filename (use same stem as match)
+        playlist_data = match_result.get("playlist_data", {})
+        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        output_path = artifacts_dir / f"{stem}.enriched.json"
+        
+        # Save enriched match report
+        save_json(match_result, output_path)
+        
+        print(f"✓ Found links for {links_found} of {len(tracks_to_enrich)} track(s)")
+        print(f"✓ Saved to: {output_path}")
+        print()
+        
+        return output_path
+        
+    finally:
+        session.close()
+
+
+def run_export(input_path: Path, base_folder: str, library_subpath: str, target_dir: Path, overwrite: bool = False) -> Path:
+    """
+    Stage 4: Export playlist folder from match report or playlist JSON.
+    
+    Args:
+        input_path: Path to match JSON or playlist JSON file
+        base_folder: Base folder containing library
+        library_subpath: Subpath to library within base_folder
+        target_dir: Directory where playlist folder should be created
+        overwrite: Whether to overwrite existing files
+    
+    Returns:
+        Path to created playlist folder
+    """
+    print_title("STAGE 4: EXPORTING PLAYLIST FOLDER")
+    
+    # Load input data
+    input_data = load_json(input_path)
+    
+    # Determine if input is a match report or playlist JSON
+    if "playlist_data" in input_data:
+        # It's a match report - use embedded playlist data
+        playlist_data = input_data["playlist_data"]
+        match_result = input_data
+        
+        # Check for missing tracks and optionally skip them
+        still_missing = [r for r in match_result["results"] if r["match_status"] == "missing"]
+        if still_missing:
+            print(f"⚠ {len(still_missing)} tracks are still missing in library.")
+            if prompt_yes_no("Skip missing tracks and export anyway?", default=False):
+                # Filter out missing tracks
+                skipped_artists_songs = {(t['artist'], t['song']) for t in still_missing}
+                original_tracks = playlist_data.get('tracks', [])
+                filtered_tracks = [
+                    t for t in original_tracks
+                    if (t.get('artist', ''), t.get('song', '')) not in skipped_artists_songs
+                ]
+                playlist_data['tracks'] = filtered_tracks
+                playlist_data['meta']['track_count'] = len(filtered_tracks)
+                print(f"ℹ {len(still_missing)} tracks will be skipped.")
+            else:
+                print("Export cancelled.")
+                raise SystemExit(0)
+    else:
+        # It's a playlist JSON - use it directly
+        playlist_data = input_data
+    
+    print("Creating playlist...")
+    print("Please wait...")
+    
+    try:
+        result = export_playlist_copies(
+            data=playlist_data,
+            base_folder=base_folder,
+            target_dir=str(target_dir),
+            library_subpath=library_subpath,
+            make_subfolder=True,
+            overwrite=overwrite,
+        )
+        
+        copied = result["summary"]["copied"]
+        total = result["summary"]["total_tracks"]
+        dest_folder = Path(result["destination_folder"])
+        
+        print(f"✓ Playlist created successfully!")
+        print(f"✓ Location: {dest_folder}")
+        print(f"✓ Tracks copied: {copied} of {total}")
+        print(f"✓ Manifest: {dest_folder / 'manifest.json'}")
+        print()
+        
+        return dest_folder
+        
+    except Exception as e:
+        print(f"Error creating playlist: {e}")
+        raise
+
+
+def run_guided_pipeline(base_folder: str, library_subpath: str, artifacts_dir: Path) -> None:
+    """
+    Run the full guided pipeline (preserves original behavior).
+    
+    This runs stages 1-4 end-to-end with user interaction for missing tracks.
+    """
+    print_title("GUIDED PIPELINE")
+    print("This will run the full workflow with guided interaction.")
+    print()
+    
+    # Step 1: Get playlist URL
+    print_title("STEP 1: PLAYLIST URL")
+    url = prompt_user("Enter playlist URL")
+    if not url:
+        print("Error: URL is required.")
         sys.exit(1)
     
-    # Step 4: Handle missing tracks
+    # Stage 1: Scrape
+    playlist_json_path = run_scrape(url, artifacts_dir)
+    playlist_data = load_json(playlist_json_path)
+    
+    # Stage 2: Match
+    match_json_path = run_match(playlist_json_path, base_folder, library_subpath, artifacts_dir)
+    match_result = load_json(match_json_path)
+    
+    # Step 3: Handle missing tracks (interactive)
     missing_tracks = display_missing_tracks(match_result)
     
     if missing_tracks:
-        print_separator()
-        print("MISSING TRACKS DETECTED")
-        print_separator()
+        print_title("MISSING TRACKS DETECTED")
         
         # Calculate library root path
         library_root_path = Path(base_folder)
@@ -526,6 +861,10 @@ def main():
             max_candidates=5,
         )
         
+        # Update match report with new results and playlist data
+        match_result["playlist_data"] = playlist_data
+        save_json(match_result, match_json_path)
+        
         still_missing = [r for r in match_result["results"] if r["match_status"] == "missing"]
         if still_missing:
             # Ask user to confirm skipping each track
@@ -553,13 +892,25 @@ def main():
             playlist_data['tracks'] = filtered_tracks
             playlist_data['meta']['track_count'] = len(filtered_tracks)
             
+            # Update saved playlist JSON
+            save_json(playlist_data, playlist_json_path)
+            
+            # Re-run match to update match report
+            match_result = match_playlist_to_library(
+                data=playlist_data,
+                base_folder=base_folder,
+                library_subpath=library_subpath,
+                include_candidates=True,
+                max_candidates=5,
+            )
+            match_result["playlist_data"] = playlist_data
+            save_json(match_result, match_json_path)
+            
             print(f"ℹ {len(confirmed_skips)} tracks will be skipped in playlist creation.")
             print()
     
-    # Step 5: Get target location and create playlist
-    print_separator()
-    print("STEP 4: CREATE PLAYLIST")
-    print_separator()
+    # Step 4: Get target location and export
+    print_title("STEP 4: CREATE PLAYLIST")
     print("Enter the target location where the playlist folder should be created.")
     print("Example: ~/Desktop or /Users/username/Desktop")
     print()
@@ -574,36 +925,407 @@ def main():
         print(f"Error: Target directory does not exist: {target_path}")
         sys.exit(1)
     
-    print()
-    print("Creating playlist...")
-    print("Please wait...")
+    # Stage 4: Export (use match report)
+    run_export(match_json_path, base_folder, library_subpath, target_path, overwrite=False)
+    
+    print("✓ Pipeline completed successfully!")
+
+
+def validate_url(url: str) -> str:
+    """
+    Validate that a string looks like a URL.
+    
+    Args:
+        url: URL string to validate
+    
+    Returns:
+        Validated URL string
+    
+    Raises:
+        ValueError: If URL doesn't look valid
+    """
+    url = url.strip()
+    if not url:
+        raise ValueError("URL cannot be empty")
+    
+    # Basic URL validation - must start with http:// or https://
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise ValueError(f"URL must start with http:// or https://: {url}")
+    
+    return url
+
+
+def validate_file_path(path: Path, file_type: str = "file") -> Path:
+    """
+    Validate that a file path exists and return the resolved path.
+    
+    Args:
+        path: Path to validate
+        file_type: Type description for error messages (e.g., "file", "directory")
+    
+    Returns:
+        Resolved Path object
+    
+    Raises:
+        FileNotFoundError: If path doesn't exist
+    """
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
+        raise FileNotFoundError(f"{file_type.capitalize()} not found: {resolved}")
+    return resolved
+
+
+def validate_json_file(path: Path, expected_type: str = None) -> dict:
+    """
+    Validate and load a JSON file, optionally checking its structure.
+    
+    Args:
+        path: Path to JSON file
+        expected_type: Optional expected type hint ("playlist", "match", etc.)
+    
+    Returns:
+        Parsed JSON dict
+    
+    Raises:
+        FileNotFoundError: If file doesn't exist
+        json.JSONDecodeError: If file is not valid JSON
+        ValueError: If file doesn't match expected type
+    """
+    resolved = validate_file_path(path, "JSON file")
     
     try:
-        result = export_playlist_copies(
-            data=playlist_data,
-            base_folder=base_folder,
-            target_dir=str(target_path),
-            library_subpath=library_subpath,
-            make_subfolder=True,
-            overwrite=False,
-        )
+        data = load_json(resolved)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON file: {resolved}\nError: {e}")
+    
+    # Basic type validation
+    if expected_type == "playlist":
+        if "meta" not in data or "tracks" not in data:
+            raise ValueError(f"File does not appear to be a playlist JSON: {resolved}\n"
+                           f"Expected keys: 'meta', 'tracks'")
+    elif expected_type == "match":
+        if "summary" not in data or "results" not in data:
+            raise ValueError(f"File does not appear to be a match JSON: {resolved}\n"
+                           f"Expected keys: 'summary', 'results'")
+    
+    return data
+
+
+def list_artifacts(artifact_type: str = None) -> list[Path]:
+    """
+    List available artifact files in the artifacts directory.
+    
+    Args:
+        artifact_type: Optional filter by type ("playlist", "match", "enriched")
+    
+    Returns:
+        List of Path objects to artifact files
+    """
+    if not ARTIFACTS_DIR.exists():
+        return []
+    
+    artifacts = []
+    pattern = f"*.{artifact_type}.json" if artifact_type else "*.json"
+    
+    for path in sorted(ARTIFACTS_DIR.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True):
+        if path.is_file():
+            artifacts.append(path)
+    
+    return artifacts
+
+
+def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool = True, 
+                     expected_json_type: str = None, show_artifacts: bool = False) -> Path:
+    """
+    Prompt user for a file path with validation.
+    
+    Args:
+        prompt_text: Prompt message
+        file_type: Type description for error messages
+        must_exist: Whether file must exist
+        expected_json_type: If provided, validate JSON structure ("playlist", "match")
+        show_artifacts: If True, show available artifacts before prompting
+    
+    Returns:
+        Validated Path object
+    """
+    # Show available artifacts if requested
+    if show_artifacts:
+        artifacts = list_artifacts(expected_json_type)
+        if artifacts:
+            print()
+            print(f"Available {expected_json_type or 'artifact'} files in {ARTIFACTS_DIR}:")
+            for i, artifact in enumerate(artifacts[:10], 1):  # Show up to 10 most recent
+                print(f"  {i}. {artifact.name}")
+            if len(artifacts) > 10:
+                print(f"  ... and {len(artifacts) - 10} more")
+            print()
+            if prompt_yes_no("Use one of these files?", default=False):
+                while True:
+                    try:
+                        choice_str = prompt_user(f"Enter number (1-{min(10, len(artifacts))}) or path")
+                        if not choice_str:
+                            break
+                        # Try to parse as number
+                        try:
+                            choice_num = int(choice_str)
+                            if 1 <= choice_num <= min(10, len(artifacts)):
+                                return artifacts[choice_num - 1].resolve()
+                            else:
+                                print(f"Please enter a number between 1 and {min(10, len(artifacts))}")
+                                continue
+                        except ValueError:
+                            # Not a number, treat as path
+                            break
+                    except (KeyboardInterrupt, EOFError):
+                        break
+    
+    while True:
+        path_str = prompt_user(prompt_text)
+        if not path_str:
+            print(f"Error: {file_type.capitalize()} path is required.")
+            if not prompt_yes_no("Try again?", default=True):
+                raise SystemExit(0)
+            continue
         
-        copied = result["summary"]["copied"]
-        total = result["summary"]["total_tracks"]
-        dest_folder = result["destination_folder"]
-        
-        print_separator()
-        print("✓ PLAYLIST CREATED SUCCESSFULLY!")
-        print_separator()
-        print(f"Location: {dest_folder}")
-        print(f"Tracks copied: {copied} of {total}")
-        print(f"Manifest: {Path(dest_folder) / 'manifest.json'}")
+        try:
+            path = Path(path_str).expanduser()
+            
+            # If path is relative and artifacts dir exists, check there first
+            if not path.is_absolute() and ARTIFACTS_DIR.exists():
+                artifact_path = ARTIFACTS_DIR / path_str
+                if artifact_path.exists():
+                    path = artifact_path
+            
+            if must_exist:
+                if expected_json_type:
+                    # Validate JSON structure
+                    validate_json_file(path, expected_json_type)
+                else:
+                    validate_file_path(path, file_type)
+            
+            return path.resolve()
+            
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            if ARTIFACTS_DIR.exists() and not path.is_absolute():
+                artifacts = list_artifacts(expected_json_type)
+                if artifacts:
+                    print(f"\nTip: Available {expected_json_type or 'artifact'} files:")
+                    for artifact in artifacts[:5]:
+                        print(f"  - {artifact.name}")
+            if prompt_yes_no("Try again?", default=True):
+                continue
+            raise SystemExit(0)
+        except (ValueError, json.JSONDecodeError) as e:
+            print(f"Error: {e}")
+            if prompt_yes_no("Try again?", default=True):
+                continue
+            raise SystemExit(0)
+
+
+def main():
+    """Main workflow function."""
+    #print_title("SPINDLE")
+    print_banner()
+    #print()
+    
+    # Ensure artifacts directory exists
+    ARTIFACTS_DIR.mkdir(exist_ok=True)
+    
+    while True:
+        # Main menu
+        print_title("MAIN MENU")
+        print("1. Scrape playlist (save JSON artifact)")
+        print("2. Match playlist JSON to library (save match report)")
+        print("3. Enrich missing tracks with streaming links (save enriched report)")
+        print("4. Export playlist folder (from match report or playlist JSON)")
+        print("5. Catalog new music into library")
+        print("6. Run full pipeline (guided)")
+        print("7. Quit")
         print()
-        print("Playlist is ready to use!")
         
-    except Exception as e:
-        print(f"Error creating playlist: {e}")
-        sys.exit(1)
+        choice = prompt_user("Select option (1-7)", "1").strip()
+        
+        if choice == "7":
+            print("Goodbye!")
+            return
+        
+        if choice == "5":
+            # Catalog music workflow
+            try:
+                base_folder, library_subpath = get_library_path()
+                catalog_new_music(base_folder, library_subpath)
+            except (KeyboardInterrupt, SystemExit):
+                print("\nOperation cancelled.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        if choice == "6":
+            # Guided pipeline
+            try:
+                base_folder, library_subpath = get_library_path()
+                run_guided_pipeline(base_folder, library_subpath, ARTIFACTS_DIR)
+            except (KeyboardInterrupt, SystemExit):
+                print("\nOperation cancelled.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        if choice == "1":
+            # Stage 1: Scrape
+            try:
+                while True:
+                    url = prompt_user("Enter playlist URL")
+                    if not url:
+                        print("Error: URL is required.")
+                        if not prompt_yes_no("Try again?", default=True):
+                            break
+                        continue
+                    
+                    try:
+                        url = validate_url(url)
+                        break
+                    except ValueError as e:
+                        print(f"Error: {e}")
+                        if not prompt_yes_no("Try again?", default=True):
+                            break
+                
+                if not url:
+                    if prompt_yes_no("Return to main menu?", default=True):
+                        continue
+                    return
+                
+                run_scrape(url, ARTIFACTS_DIR)
+                print("\n✓ Stage 1 completed successfully!")
+                
+            except KeyboardInterrupt:
+                print("\n\nOperation cancelled by user.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        if choice == "2":
+            # Stage 2: Match
+            try:
+                playlist_path = prompt_file_path(
+                    "Enter path to playlist JSON file",
+                    file_type="playlist JSON file",
+                    expected_json_type="playlist",
+                    show_artifacts=True
+                )
+                base_folder, library_subpath = get_library_path()
+                run_match(playlist_path, base_folder, library_subpath, ARTIFACTS_DIR)
+                print("\n✓ Stage 2 completed successfully!")
+                
+            except (KeyboardInterrupt, SystemExit):
+                print("\nOperation cancelled.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        if choice == "3":
+            # Stage 3: Enrich links
+            try:
+                match_path = prompt_file_path(
+                    "Enter path to match JSON file",
+                    file_type="match JSON file",
+                    expected_json_type="match",
+                    show_artifacts=True
+                )
+                missing_only = prompt_yes_no("Enrich only missing tracks?", default=True)
+                run_links(match_path, ARTIFACTS_DIR, missing_only=missing_only)
+                print("\n✓ Stage 3 completed successfully!")
+                
+            except (KeyboardInterrupt, SystemExit):
+                print("\nOperation cancelled.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        if choice == "4":
+            # Stage 4: Export
+            try:
+                input_path = prompt_file_path(
+                    "Enter path to match JSON or playlist JSON file",
+                    file_type="JSON file",
+                    show_artifacts=True
+                )
+                
+                # Try to determine type for better error messages
+                try:
+                    data = load_json(input_path)
+                    if "playlist_data" in data or ("summary" in data and "results" in data):
+                        # It's a match JSON
+                        pass
+                    elif "meta" in data and "tracks" in data:
+                        # It's a playlist JSON
+                        pass
+                    else:
+                        print("Warning: File structure unclear. Proceeding anyway...")
+                except Exception:
+                    pass  # Will be caught by run_export if it's invalid
+                
+                base_folder, library_subpath = get_library_path()
+                
+                target_dir_str = prompt_user("Enter target directory for playlist folder")
+                if not target_dir_str:
+                    print("Error: Target directory is required.")
+                    if prompt_yes_no("Return to main menu?", default=True):
+                        continue
+                    return
+                
+                target_dir = Path(target_dir_str).expanduser()
+                try:
+                    target_dir = validate_file_path(target_dir, "directory")
+                except FileNotFoundError as e:
+                    print(f"Error: {e}")
+                    if prompt_yes_no("Return to main menu?", default=True):
+                        continue
+                    return
+                
+                overwrite = prompt_yes_no("Overwrite existing files?", default=False)
+                run_export(input_path, base_folder, library_subpath, target_dir, overwrite=overwrite)
+                print("\n✓ Stage 4 completed successfully!")
+                
+            except (KeyboardInterrupt, SystemExit):
+                print("\nOperation cancelled.")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            except Exception as e:
+                print(f"\nError: {e}")
+                if not prompt_yes_no("Return to main menu?", default=True):
+                    return
+            continue
+        
+        # Invalid choice
+        print()
+        print(f"⚠ Invalid choice: '{choice}'")
+        print("Please enter a number between 1 and 7.")
+        print()
+        if not prompt_yes_no("Return to menu?", default=True):
+            return
 
 
 if __name__ == "__main__":
