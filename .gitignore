@@ -43,3 +43,4 @@ htmlcov/
 test_location/
 *.log
 link_cache.json
+artifacts/
