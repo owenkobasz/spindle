@@ -10,7 +10,11 @@ This was also an experiemnet in vibe coding a simple program with the help of GP
 - Create a local project with the components and a main function that uses them in tandem.
 - Have Cursor finish connecting the dots and smooth out the rough patches.
 
+Another pain point that GPT helped me easily circumvent was fetching streaming service urls for the songs and albums. Currently the app exports amazon music urls, but it can easily share Spoitify, Tidal, Deezer, etc. I wanted these as easy reference points but was unsure how to approach it since music streaming servies geneerally don't have public APIs and are noriously hard to scrape. When brainstoriming the problem GPT, however, suggusted that I send the metadata to Deezer's API then use its link with a link-aggregator api to get the links for other streaming services. I ended up using this technique with Odesli and it works great! Itunes also has a public API, so I added it as a backup function to try if the call to Deezer fails.
+
 The goal with this project is to automate a tedious task and the main difficulties are those inharent with all natural language processing. I've done my best to normalizes everything but the project is only as good as the data backing it. I'm now working on importing my old music library to the same harddrive and will create a companion project to streamline library standardization. Many of those files go back to the '00s and lord only knows what the state of their orginization is.
+
+
 
 ## Features
 
