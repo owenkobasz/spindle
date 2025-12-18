@@ -42,3 +42,4 @@ htmlcov/
 # Project specific
 test_location/
 *.log
+link_cache.json

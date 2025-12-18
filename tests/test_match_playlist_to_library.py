@@ -241,6 +241,7 @@ class TestMatchPlaylistToLibrary:
             base_folder=str(temp_library),
             library_subpath="",
             include_candidates=True,
+            max_candidates=5,
         )
 
         # Second track should have candidates
@@ -384,4 +385,5 @@ class TestMatchPlaylistToLibrary:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
 

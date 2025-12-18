@@ -61,3 +61,4 @@ print("=" * 60)
 print("Manifest saved to:", result['destination_folder'] + "/manifest.json")
 print("=" * 60)
 
+
