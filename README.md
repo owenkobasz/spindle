@@ -33,7 +33,7 @@ This project was also an experiment in *vibe coding* — intentionally building 
 * Break the idea into discrete components and outline them in Notion
 * Use GPT to draft initial versions of each component
 * Assemble a local project and define a clear main execution path
-* Use Cursor to connect pieces, refactor, and smooth rough edges
+* Use Cursor to connect pieces, refactor, and create documentation 
 
 The result came together faster and more cleanly than I expected, and I’m currently working on a longer blog post that dives deeper into this workflow.
 
