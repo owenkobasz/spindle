@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+from tqdm import tqdm
 
 from scraper import playlist_scraper
 from match_playlist_to_library import match_playlist_to_library
@@ -210,22 +211,23 @@ def prompt_yes_no(prompt: str, default: bool = True) -> bool:
 
 def get_library_path() -> tuple[str, str]:
     """
-    Prompt user for library location.
+    Prompt user for library location with default of /Volumes/Music Library.
     
     Returns:
         Tuple of (base_folder, library_subpath)
     """
     print_title("LIBRARY LOCATION")
     print("Enter the path to your music library.")
-    print("Examples:")
-    print("  - If library is at /Volumes/Music Library, enter that path")
-    print("  - If library is at /Users/username/Music/Library, enter /Users/username and subpath Music/Library")
+    print("Press Enter to use the default, or enter a different path.")
     print()
     
-    base = prompt_user("Base folder")
+    # Default library location
+    default_base = "/Volumes/Music Library"
+    
+    base = prompt_user("Base folder", default_base)
     if not base:
-        print("Error: Base folder is required.")
-        sys.exit(1)
+        # If user cleared the default, use it anyway
+        base = default_base
     
     # Check if base folder exists
     base_path = Path(base).expanduser()
@@ -237,6 +239,80 @@ def get_library_path() -> tuple[str, str]:
     subpath = prompt_user("Library subpath (press Enter if base folder IS the library)", "")
     
     return str(base_path), subpath
+
+
+def print_track_list(tracks: list[dict], title: str = "TRACK LIST") -> None:
+    """
+    Print a formatted list of tracks.
+    
+    Args:
+        tracks: List of track dictionaries with 'artist' and 'song' keys
+        title: Title to display above the track list
+    """
+    if not tracks:
+        return
+    
+    print_title(title)
+    for i, track in enumerate(tracks, 1):
+        artist = track.get('artist', 'Unknown Artist')
+        song = track.get('song', 'Unknown Song')
+        print(f"  {i:3d}. {artist} - {song}")
+    print()
+
+
+def print_track_list_with_links(tracks: list[dict], title: str = "ENRICHED TRACKS") -> None:
+    """
+    Print a formatted list of tracks with their streaming links.
+    
+    Args:
+        tracks: List of track dictionaries with 'artist', 'song', and 'share_links' keys
+        title: Title to display above the track list
+    """
+    if not tracks:
+        return
+    
+    print_title(title)
+    for i, track in enumerate(tracks, 1):
+        artist = track.get('artist', 'Unknown Artist')
+        song = track.get('song', 'Unknown Song')
+        print(f"  {i:3d}. {artist} - {song}")
+        
+        # Get share links
+        share_links = track.get('share_links', {})
+        album_links = track.get('album_share_links', {})
+        
+        # Print track links (prioritize Amazon Music, then show others)
+        if share_links:
+            # Try Amazon Music first
+            if 'amazon_music' in share_links:
+                print(f"       Track: {share_links['amazon_music']}")
+            # Show other services if Amazon Music not available
+            elif share_links:
+                # Show first available link
+                service, url = next(iter(share_links.items()))
+                service_name = service.replace('_', ' ').title()
+                print(f"       Track ({service_name}): {url}")
+        else:
+            print(f"       Track: (no links found)")
+        
+        # Print album links (prioritize Amazon Music, then show others)
+        if album_links:
+            # Try Amazon Music first
+            if 'amazon_music' in album_links:
+                print(f"       Album: {album_links['amazon_music']}")
+            # Show other services if Amazon Music not available
+            elif album_links:
+                # Show first available link
+                service, url = next(iter(album_links.items()))
+                service_name = service.replace('_', ' ').title()
+                print(f"       Album ({service_name}): {url}")
+        else:
+            # Check if there's album info but no links
+            if track.get('album'):
+                print(f"       Album: (no links found)")
+        
+        print()
+    print()
 
 
 def display_missing_tracks(match_result: dict) -> list[dict]:
@@ -606,6 +682,11 @@ def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, 
     # Load playlist data
     playlist_data = load_json(playlist_json_path)
     
+    # Print track list
+    tracks = playlist_data.get("tracks", [])
+    if tracks:
+        print_track_list(tracks, f"PLAYLIST TRACKS ({len(tracks)} tracks)")
+    
     print("Matching tracks to library...")
     print("Please wait...")
     
@@ -675,14 +756,19 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         print()
         return match_json_path
     
+    # Print track list that will be enriched
+    enrich_type = "MISSING TRACKS" if missing_only else "ALL TRACKS"
+    print_track_list(tracks_to_enrich, f"{enrich_type} TO ENRICH ({len(tracks_to_enrich)} tracks)")
+    
     print(f"Enriching {len(tracks_to_enrich)} track(s) with streaming links...")
-    print("Please wait...")
+    print()
     
     session = requests.Session()
     links_found = 0
     
     try:
-        for track in tracks_to_enrich:
+        # Use tqdm to show progress bar
+        for track in tqdm(tracks_to_enrich, desc="Enriching tracks", unit="track"):
             try:
                 track_meta = TrackMeta(
                     artist=track.get('artist', ''),
@@ -696,15 +782,28 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
                 )
                 
                 # Attach link result to track
-                track["share_links"] = link_result.get("aggregated", {}).get("targets", {}) if link_result.get("ok") else {}
-                track["songlink_page"] = link_result.get("aggregated", {}).get("page_url") if link_result.get("ok") else None
-                track["link_seed"] = link_result.get("seed") if link_result.get("ok") else None
-                
                 if link_result.get("ok"):
+                    track["share_links"] = link_result.get("aggregated", {}).get("targets", {})
+                    track["songlink_page"] = link_result.get("aggregated", {}).get("page_url")
+                    track["link_seed"] = link_result.get("seed")
+                    
+                    # Store album links if available
+                    album_aggregated = link_result.get("album_aggregated", {})
+                    if album_aggregated:
+                        track["album_share_links"] = album_aggregated.get("targets", {})
+                    else:
+                        track["album_share_links"] = {}
+                    
                     links_found += 1
+                else:
+                    track["share_links"] = {}
+                    track["album_share_links"] = {}
+                    track["songlink_page"] = None
+                    track["link_seed"] = None
             except Exception:
                 # Silently handle errors
                 track["share_links"] = {}
+                track["album_share_links"] = {}
                 track["songlink_page"] = None
                 track["link_seed"] = None
         
@@ -716,9 +815,14 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         # Save enriched match report
         save_json(match_result, output_path)
         
+        print()
         print(f"✓ Found links for {links_found} of {len(tracks_to_enrich)} track(s)")
         print(f"✓ Saved to: {output_path}")
         print()
+        
+        # Print enriched track list with links
+        enrich_type = "ENRICHED MISSING TRACKS" if missing_only else "ENRICHED TRACKS"
+        print_track_list_with_links(tracks_to_enrich, f"{enrich_type} ({len(tracks_to_enrich)} tracks)")
         
         return output_path
         
@@ -1124,208 +1228,279 @@ def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool
             raise SystemExit(0)
 
 
-def main():
-    """Main workflow function."""
-    #print_title("SPINDLE")
-    print_banner()
-    #print()
+# ----------------------------
+# Menu system
+# ----------------------------
+
+def display_main_menu() -> None:
+    """Display the main menu options."""
+    print_title("MAIN MENU")
+    print("1. Scrape playlist (save JSON artifact)")
+    print("2. Match playlist JSON to library (save match report)")
+    print("3. Enrich missing tracks with streaming links (save enriched report)")
+    print("4. Export playlist folder (from match report or playlist JSON)")
+    print("5. Catalog new music into library")
+    print("6. Run full pipeline (guided)")
+    print("7. Quit")
+    print()
+
+
+def handle_operation_error(error: Exception, operation_name: str = "Operation") -> bool:
+    """
+    Handle errors from menu operations with consistent user interaction.
     
-    # Ensure artifacts directory exists
-    ARTIFACTS_DIR.mkdir(exist_ok=True)
+    Args:
+        error: The exception that occurred
+        operation_name: Name of the operation for error messages
     
-    while True:
-        # Main menu
-        print_title("MAIN MENU")
-        print("1. Scrape playlist (save JSON artifact)")
-        print("2. Match playlist JSON to library (save match report)")
-        print("3. Enrich missing tracks with streaming links (save enriched report)")
-        print("4. Export playlist folder (from match report or playlist JSON)")
-        print("5. Catalog new music into library")
-        print("6. Run full pipeline (guided)")
-        print("7. Quit")
-        print()
+    Returns:
+        True if user wants to return to menu, False if they want to quit
+    """
+    if isinstance(error, (KeyboardInterrupt, SystemExit)):
+        print("\nOperation cancelled.")
+    else:
+        print(f"\nError: {error}")
+    
+    return prompt_yes_no("Return to main menu?", default=True)
+
+
+def handle_scrape_option() -> bool:
+    """
+    Handle menu option 1: Scrape playlist.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        while True:
+            url = prompt_user("Enter playlist URL")
+            if not url:
+                print("Error: URL is required.")
+                if not prompt_yes_no("Try again?", default=True):
+                    break
+                continue
+            
+            try:
+                url = validate_url(url)
+                break
+            except ValueError as e:
+                print(f"Error: {e}")
+                if not prompt_yes_no("Try again?", default=True):
+                    break
         
+        if not url:
+            return prompt_yes_no("Return to main menu?", default=True)
+        
+        run_scrape(url, ARTIFACTS_DIR)
+        print("\n✓ Stage 1 completed successfully!")
+        return True
+        
+    except KeyboardInterrupt:
+        print("\n\nOperation cancelled by user.")
+        return prompt_yes_no("Return to main menu?", default=True)
+    except Exception as e:
+        return handle_operation_error(e, "Scrape")
+
+
+def handle_match_option() -> bool:
+    """
+    Handle menu option 2: Match playlist to library.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        playlist_path = prompt_file_path(
+            "Enter path to playlist JSON file",
+            file_type="playlist JSON file",
+            expected_json_type="playlist",
+            show_artifacts=True
+        )
+        base_folder, library_subpath = get_library_path()
+        run_match(playlist_path, base_folder, library_subpath, ARTIFACTS_DIR)
+        print("\n✓ Stage 2 completed successfully!")
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Match")
+    except Exception as e:
+        return handle_operation_error(e, "Match")
+
+
+def handle_enrich_option() -> bool:
+    """
+    Handle menu option 3: Enrich tracks with streaming links.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        match_path = prompt_file_path(
+            "Enter path to match JSON file",
+            file_type="match JSON file",
+            expected_json_type="match",
+            show_artifacts=True
+        )
+        missing_only = prompt_yes_no("Enrich only missing tracks?", default=True)
+        run_links(match_path, ARTIFACTS_DIR, missing_only=missing_only)
+        print("\n✓ Stage 3 completed successfully!")
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Enrich")
+    except Exception as e:
+        return handle_operation_error(e, "Enrich")
+
+
+def handle_export_option() -> bool:
+    """
+    Handle menu option 4: Export playlist folder.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        input_path = prompt_file_path(
+            "Enter path to match JSON or playlist JSON file",
+            file_type="JSON file",
+            show_artifacts=True
+        )
+        
+        # Try to determine type for better error messages
+        try:
+            data = load_json(input_path)
+            if "playlist_data" in data or ("summary" in data and "results" in data):
+                # It's a match JSON
+                pass
+            elif "meta" in data and "tracks" in data:
+                # It's a playlist JSON
+                pass
+            else:
+                print("Warning: File structure unclear. Proceeding anyway...")
+        except Exception:
+            pass  # Will be caught by run_export if it's invalid
+        
+        base_folder, library_subpath = get_library_path()
+        
+        target_dir_str = prompt_user("Enter target directory for playlist folder")
+        if not target_dir_str:
+            print("Error: Target directory is required.")
+            return prompt_yes_no("Return to main menu?", default=True)
+        
+        target_dir = Path(target_dir_str).expanduser()
+        try:
+            target_dir = validate_file_path(target_dir, "directory")
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            return prompt_yes_no("Return to main menu?", default=True)
+        
+        overwrite = prompt_yes_no("Overwrite existing files?", default=False)
+        run_export(input_path, base_folder, library_subpath, target_dir, overwrite=overwrite)
+        print("\n✓ Stage 4 completed successfully!")
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Export")
+    except Exception as e:
+        return handle_operation_error(e, "Export")
+
+
+def handle_catalog_option() -> bool:
+    """
+    Handle menu option 5: Catalog new music.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        base_folder, library_subpath = get_library_path()
+        catalog_new_music(base_folder, library_subpath)
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Catalog")
+    except Exception as e:
+        return handle_operation_error(e, "Catalog")
+
+
+def handle_guided_pipeline_option() -> bool:
+    """
+    Handle menu option 6: Run guided pipeline.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        base_folder, library_subpath = get_library_path()
+        run_guided_pipeline(base_folder, library_subpath, ARTIFACTS_DIR)
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Guided Pipeline")
+    except Exception as e:
+        return handle_operation_error(e, "Guided Pipeline")
+
+
+def handle_invalid_choice(choice: str) -> bool:
+    """
+    Handle invalid menu choice.
+    
+    Args:
+        choice: The invalid choice string
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    print()
+    print(f"⚠ Invalid choice: '{choice}'")
+    print("Please enter a number between 1 and 7.")
+    print()
+    return prompt_yes_no("Return to menu?", default=True)
+
+
+def run_main_menu_loop() -> None:
+    """
+    Run the main menu loop until user quits.
+    
+    This function handles the menu display, choice routing, and loop control.
+    """
+    while True:
+        display_main_menu()
         choice = prompt_user("Select option (1-7)", "1").strip()
         
         if choice == "7":
             print("Goodbye!")
             return
         
-        if choice == "5":
-            # Catalog music workflow
-            try:
-                base_folder, library_subpath = get_library_path()
-                catalog_new_music(base_folder, library_subpath)
-            except (KeyboardInterrupt, SystemExit):
-                print("\nOperation cancelled.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
-        
-        if choice == "6":
-            # Guided pipeline
-            try:
-                base_folder, library_subpath = get_library_path()
-                run_guided_pipeline(base_folder, library_subpath, ARTIFACTS_DIR)
-            except (KeyboardInterrupt, SystemExit):
-                print("\nOperation cancelled.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
+        should_continue = True
         
         if choice == "1":
-            # Stage 1: Scrape
-            try:
-                while True:
-                    url = prompt_user("Enter playlist URL")
-                    if not url:
-                        print("Error: URL is required.")
-                        if not prompt_yes_no("Try again?", default=True):
-                            break
-                        continue
-                    
-                    try:
-                        url = validate_url(url)
-                        break
-                    except ValueError as e:
-                        print(f"Error: {e}")
-                        if not prompt_yes_no("Try again?", default=True):
-                            break
-                
-                if not url:
-                    if prompt_yes_no("Return to main menu?", default=True):
-                        continue
-                    return
-                
-                run_scrape(url, ARTIFACTS_DIR)
-                print("\n✓ Stage 1 completed successfully!")
-                
-            except KeyboardInterrupt:
-                print("\n\nOperation cancelled by user.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
+            should_continue = handle_scrape_option()
+        elif choice == "2":
+            should_continue = handle_match_option()
+        elif choice == "3":
+            should_continue = handle_enrich_option()
+        elif choice == "4":
+            should_continue = handle_export_option()
+        elif choice == "5":
+            should_continue = handle_catalog_option()
+        elif choice == "6":
+            should_continue = handle_guided_pipeline_option()
+        else:
+            should_continue = handle_invalid_choice(choice)
         
-        if choice == "2":
-            # Stage 2: Match
-            try:
-                playlist_path = prompt_file_path(
-                    "Enter path to playlist JSON file",
-                    file_type="playlist JSON file",
-                    expected_json_type="playlist",
-                    show_artifacts=True
-                )
-                base_folder, library_subpath = get_library_path()
-                run_match(playlist_path, base_folder, library_subpath, ARTIFACTS_DIR)
-                print("\n✓ Stage 2 completed successfully!")
-                
-            except (KeyboardInterrupt, SystemExit):
-                print("\nOperation cancelled.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
-        
-        if choice == "3":
-            # Stage 3: Enrich links
-            try:
-                match_path = prompt_file_path(
-                    "Enter path to match JSON file",
-                    file_type="match JSON file",
-                    expected_json_type="match",
-                    show_artifacts=True
-                )
-                missing_only = prompt_yes_no("Enrich only missing tracks?", default=True)
-                run_links(match_path, ARTIFACTS_DIR, missing_only=missing_only)
-                print("\n✓ Stage 3 completed successfully!")
-                
-            except (KeyboardInterrupt, SystemExit):
-                print("\nOperation cancelled.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
-        
-        if choice == "4":
-            # Stage 4: Export
-            try:
-                input_path = prompt_file_path(
-                    "Enter path to match JSON or playlist JSON file",
-                    file_type="JSON file",
-                    show_artifacts=True
-                )
-                
-                # Try to determine type for better error messages
-                try:
-                    data = load_json(input_path)
-                    if "playlist_data" in data or ("summary" in data and "results" in data):
-                        # It's a match JSON
-                        pass
-                    elif "meta" in data and "tracks" in data:
-                        # It's a playlist JSON
-                        pass
-                    else:
-                        print("Warning: File structure unclear. Proceeding anyway...")
-                except Exception:
-                    pass  # Will be caught by run_export if it's invalid
-                
-                base_folder, library_subpath = get_library_path()
-                
-                target_dir_str = prompt_user("Enter target directory for playlist folder")
-                if not target_dir_str:
-                    print("Error: Target directory is required.")
-                    if prompt_yes_no("Return to main menu?", default=True):
-                        continue
-                    return
-                
-                target_dir = Path(target_dir_str).expanduser()
-                try:
-                    target_dir = validate_file_path(target_dir, "directory")
-                except FileNotFoundError as e:
-                    print(f"Error: {e}")
-                    if prompt_yes_no("Return to main menu?", default=True):
-                        continue
-                    return
-                
-                overwrite = prompt_yes_no("Overwrite existing files?", default=False)
-                run_export(input_path, base_folder, library_subpath, target_dir, overwrite=overwrite)
-                print("\n✓ Stage 4 completed successfully!")
-                
-            except (KeyboardInterrupt, SystemExit):
-                print("\nOperation cancelled.")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            except Exception as e:
-                print(f"\nError: {e}")
-                if not prompt_yes_no("Return to main menu?", default=True):
-                    return
-            continue
-        
-        # Invalid choice
-        print()
-        print(f"⚠ Invalid choice: '{choice}'")
-        print("Please enter a number between 1 and 7.")
-        print()
-        if not prompt_yes_no("Return to menu?", default=True):
+        if not should_continue:
             return
+
+
+def main():
+    """Main entry point."""
+    print_banner()
+    
+    # Ensure artifacts directory exists
+    ARTIFACTS_DIR.mkdir(exist_ok=True)
+    
+    run_main_menu_loop()
 
 
 if __name__ == "__main__":

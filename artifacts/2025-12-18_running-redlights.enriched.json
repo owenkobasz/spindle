@@ -1,0 +1,1358 @@
+{
+  "meta": {
+    "source_url": "https://playlists.wprb.com/WPRB/pl/21686550/Running-Redlights",
+    "canonical_url": "https://playlists.wprb.com/WPRB/pl/21686550/Running-Redlights",
+    "domain": "playlists.wprb.com",
+    "fetched_at_utc": "2025-12-18T17:05:44.431272+00:00",
+    "page_title": "Running Redlights Thu Dec 18 with Jen on WPRB Princeton 103.3 FM",
+    "playlist_title": "WPRB Princeton 103.3 FM",
+    "station": null,
+    "track_count": 31
+  },
+  "summary": {
+    "library_root": "/Volumes/Music Library",
+    "total_tracks": 31,
+    "found": 0,
+    "missing": 31
+  },
+  "results": [
+    {
+      "time": "3:01 AM",
+      "artist": "Winged Wheel",
+      "album": "Desert So Green",
+      "song": "Canvas 11",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "3:07 AM",
+      "artist": "Ecstatic Vision",
+      "album": "Sonic Praise",
+      "song": "Don't Kill the Vibe",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B00WT9O2W2?trackAsin=B00WT9OEA2",
+        "soundcloud": "https://soundcloud.com/ecstaticvision/dont-kill-the-vibe?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/99429854",
+        "tidal": "https://listen.tidal.com/track/46344044"
+      },
+      "songlink_page": "https://song.link/d/99429854",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/99429854",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Ecstatic Vision",
+          "title": "Don't Kill the Vibe",
+          "album": "Sonic Praise"
+        },
+        "raw": {
+          "artist": "Ecstatic Vision",
+          "title": "Don't Kill the Vibe",
+          "album": "Sonic Praise",
+          "seed_url": "https://www.deezer.com/track/99429854"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B00WT9O2W2",
+        "soundcloud": "https://soundcloud.com/ecstaticvision/sets/sonic-praise?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/10179742",
+        "tidal": "https://listen.tidal.com/album/46344039"
+      }
+    },
+    {
+      "time": "3:12 AM",
+      "artist": "Evolfo",
+      "album": "Site out of Mind",
+      "song": "Strange Lights",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B08X6FRX1X?trackAsin=B08X6MF3D7",
+        "soundcloud": "https://soundcloud.com/evolfo/strange-lights-1?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/1252740192",
+        "tidal": "https://listen.tidal.com/track/174574244"
+      },
+      "songlink_page": "https://song.link/d/1252740192",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/1252740192",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Evolfo",
+          "title": "Strange Lights",
+          "album": "Site out of Mind"
+        },
+        "raw": {
+          "artist": "Evolfo",
+          "title": "Strange Lights",
+          "album": "Site out of Mind",
+          "seed_url": "https://www.deezer.com/track/1252740192"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B08X6FRX1X",
+        "soundcloud": "https://soundcloud.com/evolfo/sets/site-out-of-mind?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/209646922",
+        "tidal": "https://listen.tidal.com/album/174574075"
+      }
+    },
+    {
+      "time": "3:16 AM",
+      "artist": "Zounds",
+      "album": "Yes Liberation",
+      "song": "Dancing (2020 Version)",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "3:21 AM",
+      "artist": "Wild Kingdom",
+      "album": "Nobody Gets On The Guest List!",
+      "song": "The Way To Love",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "3:23 AM",
+      "artist": "Sunwatchers",
+      "album": "Music Is Victory Over Time",
+      "song": "World People",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0CGG8H3QB?trackAsin=B0CGFZ4SHP",
+        "soundcloud": "https://soundcloud.com/sunwatchers-music/world-people?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/2426990735",
+        "tidal": "https://listen.tidal.com/track/312458021"
+      },
+      "songlink_page": "https://song.link/d/2426990735",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/2426990735",
+        "confidence": 0.9,
+        "matched": {
+          "artist": "Sunwatchers",
+          "title": "World People",
+          "album": "Too Gary"
+        },
+        "raw": {
+          "artist": "Sunwatchers",
+          "title": "World People",
+          "album": "Too Gary",
+          "seed_url": "https://www.deezer.com/track/2426990735"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0CGG8H3QB",
+        "soundcloud": "https://soundcloud.com/sunwatchers-music/sets/music-is-victory-over-time?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/479793745",
+        "tidal": "https://listen.tidal.com/album/312458020"
+      }
+    },
+    {
+      "time": "3:30 AM",
+      "artist": "Hélène Barbier",
+      "album": "Panorama",
+      "song": "Plastique Couch",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FLLK56QP?trackAsin=B0FLLCRS15",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3497424851",
+        "tidal": "https://listen.tidal.com/track/452810512"
+      },
+      "songlink_page": "https://song.link/d/3497424851",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3497424851",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Hélène Barbier",
+          "title": "Plastique Couch",
+          "album": "Panorama"
+        },
+        "raw": {
+          "artist": "Hélène Barbier",
+          "title": "Plastique Couch",
+          "album": "Panorama",
+          "seed_url": "https://www.deezer.com/track/3497424851"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B00ASDEKO6",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/801218401",
+        "tidal": "https://listen.tidal.com/album/452810505"
+      }
+    },
+    {
+      "time": "3:37 AM",
+      "artist": "Bee Bee Sea",
+      "album": "Stanzini Can Be Allright",
+      "song": "Angel",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FWFJFDJX?trackAsin=B0FWDQR2CG",
+        "soundcloud": "https://soundcloud.com/beebeesea-sc/angel?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3604469642",
+        "tidal": "https://listen.tidal.com/track/467241119"
+      },
+      "songlink_page": "https://song.link/d/3604469642",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3604469642",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Bee Bee Sea",
+          "title": "Angel",
+          "album": "Stanzini Can Be Allright"
+        },
+        "raw": {
+          "artist": "Bee Bee Sea",
+          "title": "Angel",
+          "album": "Stanzini Can Be Allright",
+          "seed_url": "https://www.deezer.com/track/3604469642"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FWFJFDJX",
+        "soundcloud": "https://soundcloud.com/beebeesea-sc/sets/stanzini-can-be-allright?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/838711082",
+        "tidal": "https://listen.tidal.com/album/467241114"
+      }
+    },
+    {
+      "time": "3:41 AM",
+      "artist": "The Moodists",
+      "album": "Can't Stop It! Australian Post-Punk 1978-82 (2025 Deluxe Edition)",
+      "song": "Gone Dead",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0DVH83VHT?trackAsin=B0DVH6Y5HP",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3209839271",
+        "tidal": "https://listen.tidal.com/track/82829439"
+      },
+      "songlink_page": "https://song.link/d/444576532",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/444576532",
+        "confidence": 0.967,
+        "matched": {
+          "artist": "The Moodists",
+          "title": "Gone Dead",
+          "album": "Can't Stop It! Australian Post-Punk 1978-82"
+        },
+        "raw": {
+          "artist": "The Moodists",
+          "title": "Gone Dead",
+          "album": "Can't Stop It! Australian Post-Punk 1978-82",
+          "seed_url": "https://www.deezer.com/track/444576532"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": null,
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/705458971",
+        "tidal": null
+      }
+    },
+    {
+      "time": "3:44 AM",
+      "artist": "Social Security",
+      "album": "I Don't Want My Heart To Rule My Head 7\"",
+      "song": "Cider",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B002KETVQI?trackAsin=B002KEODWA",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/11143719",
+        "tidal": "https://listen.tidal.com/track/6437173"
+      },
+      "songlink_page": "https://song.link/d/11143719",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/11143719",
+        "confidence": 0.9,
+        "matched": {
+          "artist": "Social Security",
+          "title": "Cider",
+          "album": "Arley Hill"
+        },
+        "raw": {
+          "artist": "Social Security",
+          "title": "Cider",
+          "album": "Arley Hill",
+          "seed_url": "https://www.deezer.com/track/11143719"
+        }
+      },
+      "album_share_links": {}
+    },
+    {
+      "time": "3:47 AM",
+      "artist": "UV Race",
+      "album": "Made in China",
+      "song": "Inane Brain",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B07N759739?trackAsin=B07N7FCKV9",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/624553032",
+        "tidal": "https://listen.tidal.com/track/103178127"
+      },
+      "songlink_page": "https://song.link/d/624553032",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/624553032",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "UV Race",
+          "title": "Inane Brain",
+          "album": "Made in China"
+        },
+        "raw": {
+          "artist": "UV Race",
+          "title": "Inane Brain",
+          "album": "Made in China",
+          "seed_url": "https://www.deezer.com/track/624553032"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": null,
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/85776232",
+        "tidal": "https://listen.tidal.com/album/103178123"
+      }
+    },
+    {
+      "time": "3:50 AM",
+      "artist": "Exnovios",
+      "album": "Fin",
+      "song": "Giro al Infierno",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FPSXHMRN?trackAsin=B0FPSSTCPW",
+        "soundcloud": "https://soundcloud.com/exnovios-music/giro-al-infierno?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3541206171",
+        "tidal": "https://listen.tidal.com/track/458505742"
+      },
+      "songlink_page": "https://song.link/d/3541206171",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3541206171",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Exnovios",
+          "title": "Giro al Infierno",
+          "album": "Fin"
+        },
+        "raw": {
+          "artist": "Exnovios",
+          "title": "Giro al Infierno",
+          "album": "Fin",
+          "seed_url": "https://www.deezer.com/track/3541206171"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FPSXHMRN",
+        "soundcloud": "https://soundcloud.com/exnovios-music/sets/fin-281881365?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/816247731",
+        "tidal": "https://listen.tidal.com/album/458505731"
+      }
+    },
+    {
+      "time": "3:51 AM",
+      "artist": "Bar de Monjas",
+      "album": "Fuzzonaut Split - Single",
+      "song": "Hot Rail",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B01KSZCJZ0?trackAsin=B01KSZCL0S",
+        "soundcloud": "https://soundcloud.com/bardemonjas/hot-rail?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/130456352",
+        "tidal": "https://listen.tidal.com/track/64144547"
+      },
+      "songlink_page": "https://song.link/d/130456352",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/130456352",
+        "confidence": 0.967,
+        "matched": {
+          "artist": "Bar de Monjas",
+          "title": "Hot Rail",
+          "album": "Fuzzonaut Split"
+        },
+        "raw": {
+          "artist": "Bar de Monjas",
+          "title": "Hot Rail",
+          "album": "Fuzzonaut Split",
+          "seed_url": "https://www.deezer.com/track/130456352"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B01KSZCJZ0",
+        "soundcloud": "https://soundcloud.com/bardemonjas/sets/fuzzonaut-split?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": null,
+        "tidal": "https://listen.tidal.com/album/64144546"
+      }
+    },
+    {
+      "time": "4:00 AM",
+      "artist": "ira glass",
+      "album": "joy is no knocking nation - EP",
+      "song": "fritz all over you",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FK1PQH56?trackAsin=B0FK1KXVXM",
+        "soundcloud": "https://soundcloud.com/iraglass-music/fritz-all-over-you?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3478379951",
+        "tidal": "https://listen.tidal.com/track/450368464"
+      },
+      "songlink_page": "https://song.link/d/3478379951",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3478379951",
+        "confidence": 0.983,
+        "matched": {
+          "artist": "Ira Glass",
+          "title": "fritz all over you",
+          "album": "joy is no knocking nation"
+        },
+        "raw": {
+          "artist": "Ira Glass",
+          "title": "fritz all over you",
+          "album": "joy is no knocking nation",
+          "seed_url": "https://www.deezer.com/track/3478379951"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FK1PQH56",
+        "soundcloud": "https://soundcloud.com/iraglass-music/sets/joy-is-no-knocking-nation?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/794385461",
+        "tidal": "https://listen.tidal.com/album/450368458"
+      }
+    },
+    {
+      "time": "4:03 AM",
+      "artist": "sunshine",
+      "album": "Velvet Suicide",
+      "song": "Porn Orchid",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "4:05 AM",
+      "artist": "Itchy and the Nits",
+      "album": "The Worst of Itchy and the Nits",
+      "song": "Dreamboat",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0CXSGVN6Z?trackAsin=B0CXSRJS64",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/2699940542",
+        "tidal": "https://listen.tidal.com/track/280718872"
+      },
+      "songlink_page": "https://song.link/d/2699940542",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/2699940542",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Itchy and the Nits",
+          "title": "Dreamboat",
+          "album": "The Worst of Itchy and the Nits"
+        },
+        "raw": {
+          "artist": "Itchy and the Nits",
+          "title": "Dreamboat",
+          "album": "The Worst of Itchy and the Nits",
+          "seed_url": "https://www.deezer.com/track/2699940542"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0CXSGVN6Z",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/559176922",
+        "tidal": "https://listen.tidal.com/album/351331954"
+      }
+    },
+    {
+      "time": "4:07 AM",
+      "artist": "Citric Dummies",
+      "album": "Split With Turnstile",
+      "song": "I Can't Stand the Weekend",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FQCCXWPF?trackAsin=B0FQCBNNNS",
+        "soundcloud": "https://soundcloud.com/citricdummies/i-cant-stand-the-weekend?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3548237261",
+        "tidal": "https://listen.tidal.com/track/459515952"
+      },
+      "songlink_page": "https://song.link/d/3548237261",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3548237261",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Citric Dummies",
+          "title": "I Can't Stand the Weekend",
+          "album": "Split With Turnstile"
+        },
+        "raw": {
+          "artist": "Citric Dummies",
+          "title": "I Can't Stand the Weekend",
+          "album": "Split With Turnstile",
+          "seed_url": "https://www.deezer.com/track/3548237261"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FQCCXWPF",
+        "soundcloud": "https://soundcloud.com/citricdummies/sets/split-with-turnstile?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/818668771",
+        "tidal": "https://listen.tidal.com/album/459515944"
+      }
+    },
+    {
+      "time": "4:09 AM",
+      "artist": "Bangs",
+      "album": "Tiger Beat",
+      "song": "S.O.S.",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B000US198O?trackAsin=B000US28GQ",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/30507911",
+        "tidal": "https://listen.tidal.com/track/19122196"
+      },
+      "songlink_page": "https://song.link/d/30507911",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/30507911",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Bangs",
+          "title": "S.O.S.",
+          "album": "Tiger Beat"
+        },
+        "raw": {
+          "artist": "Bangs",
+          "title": "S.O.S.",
+          "album": "Tiger Beat",
+          "seed_url": "https://www.deezer.com/track/30507911"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B000US198O",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/2908331",
+        "tidal": "https://listen.tidal.com/album/19122191"
+      }
+    },
+    {
+      "time": "4:12 AM",
+      "artist": "Glös",
+      "album": "Harmonium",
+      "song": "Telepathy",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": null,
+        "soundcloud": "https://soundcloud.com/isorin/telepathy?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/445694912",
+        "tidal": "https://listen.tidal.com/track/83549431"
+      },
+      "songlink_page": "https://song.link/d/445694912",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/445694912",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Glos",
+          "title": "Telepathy",
+          "album": "Harmonium"
+        },
+        "raw": {
+          "artist": "Glos",
+          "title": "Telepathy",
+          "album": "Harmonium",
+          "seed_url": "https://www.deezer.com/track/445694912"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B000VXFFPG",
+        "soundcloud": "https://soundcloud.com/vanessacarlton/sets/harmonium-3",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/54246612",
+        "tidal": "https://listen.tidal.com/album/83549426"
+      }
+    },
+    {
+      "time": "4:16 AM",
+      "artist": "The Sonics",
+      "album": "Maintaining My Cool",
+      "song": "Leave My Kitten Alone",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B004TMKRA8?trackAsin=B004TMKSKM",
+        "soundcloud": "https://soundcloud.com/the-sonics/leave-my-kitten-alone?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/11586747",
+        "tidal": "https://listen.tidal.com/track/9970418"
+      },
+      "songlink_page": "https://song.link/d/11586747",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/11586747",
+        "confidence": 0.9,
+        "matched": {
+          "artist": "The Sonics",
+          "title": "Leave My Kitten Alone",
+          "album": "Introducing The Sonics"
+        },
+        "raw": {
+          "artist": "The Sonics",
+          "title": "Leave My Kitten Alone",
+          "album": "Introducing The Sonics",
+          "seed_url": "https://www.deezer.com/track/11586747"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0036I5TAY",
+        "soundcloud": "https://soundcloud.com/the-sonics/sets/maintaining-my-cool?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/971788",
+        "tidal": "https://listen.tidal.com/album/8211549"
+      }
+    },
+    {
+      "time": "4:23 AM",
+      "artist": "Radium Dolls",
+      "album": "Legal Speed",
+      "song": "Long Island",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0CX89YC4T?trackAsin=B0CX8MTXL6",
+        "soundcloud": "https://soundcloud.com/radiumdolls/long-island-1?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/2690271922",
+        "tidal": "https://listen.tidal.com/track/349073619"
+      },
+      "songlink_page": "https://song.link/d/2690271922",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/2690271922",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Radium Dolls",
+          "title": "Long Island",
+          "album": "Legal Speed"
+        },
+        "raw": {
+          "artist": "Radium Dolls",
+          "title": "Long Island",
+          "album": "Legal Speed",
+          "seed_url": "https://www.deezer.com/track/2690271922"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": null,
+        "soundcloud": "https://soundcloud.com/radiumdolls/sets/legal-speed-1?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/556348562",
+        "tidal": "https://listen.tidal.com/album/349073611"
+      }
+    },
+    {
+      "time": "4:26 AM",
+      "artist": "Bulldog Breed",
+      "album": "Made in England",
+      "song": "Folder Men",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "4:28 AM",
+      "artist": "Travelers Of Tyme",
+      "album": "Chronomads",
+      "song": "Maw Keep Hide Paw",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B00VYVMQJW?trackAsin=B00VYVN15U",
+        "soundcloud": "https://soundcloud.com/travelersoftyme/maw-keep-hide-paw?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/102476244",
+        "tidal": "https://listen.tidal.com/track/45893839"
+      },
+      "songlink_page": "https://song.link/d/102476244",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/102476244",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Travelers Of Tyme",
+          "title": "Maw Keep Hide Paw",
+          "album": "Chronomads"
+        },
+        "raw": {
+          "artist": "Travelers Of Tyme",
+          "title": "Maw Keep Hide Paw",
+          "album": "Chronomads",
+          "seed_url": "https://www.deezer.com/track/102476244"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B00VYVMQJW",
+        "soundcloud": "https://soundcloud.com/travelersoftyme/sets/chronomads?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/10645052",
+        "tidal": "https://listen.tidal.com/album/45893832"
+      }
+    },
+    {
+      "time": "4:31 AM",
+      "artist": "Future Bodies",
+      "album": "Terrorist 7\"",
+      "song": "Terrorist",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "4:35 AM",
+      "artist": "Festa del Perdono",
+      "album": "Società mentale - EP",
+      "song": "Il primo freddo",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0DBFLDYHV?trackAsin=B0DBFLD8BX",
+        "soundcloud": "https://soundcloud.com/festadelperdono/il-primo-freddo?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": null,
+        "tidal": "https://listen.tidal.com/track/363116274"
+      },
+      "songlink_page": "https://song.link/us/i/1746465323",
+      "link_seed": {
+        "provider": "itunes",
+        "seed_url": "https://music.apple.com/us/album/il-primo-freddo/1746465018?i=1746465323&uo=4",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Festa del Perdono",
+          "title": "Il Primo Freddo",
+          "album": "Società Mentale - EP"
+        },
+        "raw": {
+          "artist": "Festa del Perdono",
+          "title": "Il Primo Freddo",
+          "album": "Società Mentale - EP",
+          "seed_url": "https://music.apple.com/us/album/il-primo-freddo/1746465018?i=1746465323&uo=4"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0DBFLDYHV",
+        "soundcloud": "https://soundcloud.com/festadelperdono/sets/societa-mentale?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/586543942",
+        "tidal": "https://listen.tidal.com/album/363116270"
+      }
+    },
+    {
+      "time": "4:37 AM",
+      "artist": "Jim Shepard",
+      "album": "Panties & Perfume",
+      "song": "Problem #99",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {},
+      "album_share_links": {},
+      "songlink_page": null,
+      "link_seed": null
+    },
+    {
+      "time": "4:41 AM",
+      "artist": "PLOSIVS",
+      "album": "YELL AT CLOUD",
+      "song": "Civilized",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FTZY4VNX?trackAsin=B0FTZY6RHQ",
+        "soundcloud": "https://soundcloud.com/plosivs-music/civilized?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3638378682",
+        "tidal": "https://listen.tidal.com/track/471692976"
+      },
+      "songlink_page": "https://song.link/d/3638378682",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3638378682",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "PLOSIVS",
+          "title": "Civilized",
+          "album": "YELL AT CLOUD"
+        },
+        "raw": {
+          "artist": "PLOSIVS",
+          "title": "Civilized",
+          "album": "YELL AT CLOUD",
+          "seed_url": "https://www.deezer.com/track/3638378682"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FTZY4VNX",
+        "soundcloud": "https://soundcloud.com/plosivs-music/sets/yell-at-cloud?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/850431052",
+        "tidal": "https://listen.tidal.com/album/471692968"
+      }
+    },
+    {
+      "time": "4:47 AM",
+      "artist": "Liiek",
+      "album": "Living In A Fiction",
+      "song": "Small Man",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FX381KZ9?trackAsin=B0FX34SV3N",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3607332872",
+        "tidal": "https://listen.tidal.com/track/467617878"
+      },
+      "songlink_page": "https://song.link/d/3607332872",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3607332872",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "LIIEK",
+          "title": "Small Man",
+          "album": "Living In A Fiction"
+        },
+        "raw": {
+          "artist": "LIIEK",
+          "title": "Small Man",
+          "album": "Living In A Fiction",
+          "seed_url": "https://www.deezer.com/track/3607332872"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FX381KZ9",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/839714312",
+        "tidal": "https://listen.tidal.com/album/467617872"
+      }
+    },
+    {
+      "time": "4:51 AM",
+      "artist": "Lydia Lunch",
+      "album": "8-Eyed Spy",
+      "song": "Love Split",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B013QONPNU?trackAsin=B013QONXBE",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/105394898",
+        "tidal": "https://listen.tidal.com/track/49868049"
+      },
+      "songlink_page": "https://song.link/d/105394898",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/105394898",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Lydia Lunch",
+          "title": "Love Split",
+          "album": "8-eyed Spy"
+        },
+        "raw": {
+          "artist": "Lydia Lunch",
+          "title": "Love Split",
+          "album": "8-eyed Spy",
+          "seed_url": "https://www.deezer.com/track/105394898"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B013QONPNU",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/10978430",
+        "tidal": null
+      }
+    },
+    {
+      "time": "4:53 AM",
+      "artist": "The Pop Group",
+      "album": "7\"",
+      "song": "She Is Beyond Good and Evil",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B07VRL4MQC?trackAsin=B07VQMBLPG",
+        "soundcloud": "https://soundcloud.com/thepopgroup/she-is-beyond-good-and-evil?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/723143052",
+        "tidal": "https://listen.tidal.com/track/114466293"
+      },
+      "songlink_page": "https://song.link/d/723143052",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/723143052",
+        "confidence": 0.9,
+        "matched": {
+          "artist": "The Pop Group",
+          "title": "She Is Beyond Good And Evil",
+          "album": "Y"
+        },
+        "raw": {
+          "artist": "The Pop Group",
+          "title": "She Is Beyond Good And Evil",
+          "album": "Y",
+          "seed_url": "https://www.deezer.com/track/723143052"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FHMMNGN5",
+        "soundcloud": null,
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/788672301",
+        "tidal": "https://listen.tidal.com/album/448259004"
+      }
+    },
+    {
+      "time": "4:58 AM",
+      "artist": "Automatic",
+      "album": "Is It Now?",
+      "song": "Is It Now?",
+      "match_status": "missing",
+      "matched_paths": [],
+      "candidate_paths": [],
+      "share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FC8MX4TL?trackAsin=B0FC8VYQMQ",
+        "soundcloud": "https://soundcloud.com/automatic-sc/is-it-now?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3403084581",
+        "tidal": "https://listen.tidal.com/track/436285956"
+      },
+      "songlink_page": "https://song.link/d/3403084581",
+      "link_seed": {
+        "provider": "deezer",
+        "seed_url": "https://www.deezer.com/track/3403084581",
+        "confidence": 1.0,
+        "matched": {
+          "artist": "Automatic",
+          "title": "Is It Now?",
+          "album": "Is It Now?"
+        },
+        "raw": {
+          "artist": "Automatic",
+          "title": "Is It Now?",
+          "album": "Is It Now?",
+          "seed_url": "https://www.deezer.com/track/3403084581"
+        }
+      },
+      "album_share_links": {
+        "amazon_music": "https://music.amazon.com/albums/B0FC8MX4TL",
+        "soundcloud": "https://soundcloud.com/automatic-sc/sets/is-it-now-2?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/album/768683201",
+        "tidal": "https://listen.tidal.com/album/440639559"
+      }
+    }
+  ],
+  "playlist_data": {
+    "meta": {
+      "source_url": "https://playlists.wprb.com/WPRB/pl/21686550/Running-Redlights",
+      "canonical_url": "https://playlists.wprb.com/WPRB/pl/21686550/Running-Redlights",
+      "domain": "playlists.wprb.com",
+      "fetched_at_utc": "2025-12-18T17:05:44.431272+00:00",
+      "page_title": "Running Redlights Thu Dec 18 with Jen on WPRB Princeton 103.3 FM",
+      "playlist_title": "WPRB Princeton 103.3 FM",
+      "station": null,
+      "track_count": 31
+    },
+    "tracks": [
+      {
+        "time": "3:01 AM",
+        "artist": "Winged Wheel",
+        "song": "Canvas 11",
+        "release": "Desert So Green",
+        "label": "12XU",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:07 AM",
+        "artist": "Ecstatic Vision",
+        "song": "Don't Kill the Vibe",
+        "release": "Sonic Praise",
+        "label": "Relapse Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:12 AM",
+        "artist": "Evolfo",
+        "song": "Strange Lights",
+        "release": "Site out of Mind",
+        "label": "Royal Potato Family",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:16 AM",
+        "artist": "Zounds",
+        "song": "Dancing (2020 Version)",
+        "release": "Yes Liberation",
+        "label": "Dissidents",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:21 AM",
+        "artist": "Wild Kingdom",
+        "song": "The Way To Love",
+        "release": "Nobody Gets On The Guest List!",
+        "label": "Throbbing Lobster",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:23 AM",
+        "artist": "Sunwatchers",
+        "song": "World People",
+        "release": "Music Is Victory Over Time",
+        "label": "Trouble In Mind Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:30 AM",
+        "artist": "Hélène Barbier",
+        "song": "Plastique Couch",
+        "release": "Panorama",
+        "label": "Bonsound",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:37 AM",
+        "artist": "Bee Bee Sea",
+        "song": "Angel",
+        "release": "Stanzini Can Be Allright",
+        "label": "Wild Honey Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:41 AM",
+        "artist": "The Moodists",
+        "song": "Gone Dead",
+        "release": "Can't Stop It! Australian Post-Punk 1978-82 (2025 Deluxe Edition)",
+        "label": "Chapter Music",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:44 AM",
+        "artist": "Social Security",
+        "song": "Cider",
+        "release": "I Don't Want My Heart To Rule My Head 7\"",
+        "label": "Heartbeat",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:47 AM",
+        "artist": "UV Race",
+        "song": "Inane Brain",
+        "release": "Made in China",
+        "label": "Aarght Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:50 AM",
+        "artist": "Exnovios",
+        "song": "Giro al Infierno",
+        "release": "Fin",
+        "label": "Ground Control",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "3:51 AM",
+        "artist": "Bar de Monjas",
+        "song": "Hot Rail",
+        "release": "Fuzzonaut Split - Single",
+        "label": "Industrias WIO",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:00 AM",
+        "artist": "ira glass",
+        "song": "fritz all over you",
+        "release": "joy is no knocking nation - EP",
+        "label": "Fire Talk",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:03 AM",
+        "artist": "sunshine",
+        "song": "Porn Orchid",
+        "release": "Velvet Suicide",
+        "label": "Day After Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:05 AM",
+        "artist": "Itchy and the Nits",
+        "song": "Dreamboat",
+        "release": "The Worst of Itchy and the Nits",
+        "label": "Total Punk",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:07 AM",
+        "artist": "Citric Dummies",
+        "song": "I Can't Stand the Weekend",
+        "release": "Split With Turnstile",
+        "label": "Feel It Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:09 AM",
+        "artist": "Bangs",
+        "song": "S.O.S.",
+        "release": "Tiger Beat",
+        "label": "Kill Rock Stars",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:12 AM",
+        "artist": "Glös",
+        "song": "Telepathy",
+        "release": "Harmonium",
+        "label": "Lovitt Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:16 AM",
+        "artist": "The Sonics",
+        "song": "Leave My Kitten Alone",
+        "release": "Maintaining My Cool",
+        "label": "Munster/Jerden Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:23 AM",
+        "artist": "Radium Dolls",
+        "song": "Long Island",
+        "release": "Legal Speed",
+        "label": "Radium Dolls",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:26 AM",
+        "artist": "Bulldog Breed",
+        "song": "Folder Men",
+        "release": "Made in England",
+        "label": "Rampage Productions",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:28 AM",
+        "artist": "Travelers Of Tyme",
+        "song": "Maw Keep Hide Paw",
+        "release": "Chronomads",
+        "label": "Sound Of Tyme",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:31 AM",
+        "artist": "Future Bodies",
+        "song": "Terrorist",
+        "release": "Terrorist 7\"",
+        "label": "Final Alternative",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:35 AM",
+        "artist": "Festa del Perdono",
+        "song": "Il primo freddo",
+        "release": "Società mentale - EP",
+        "label": "La Tempesta Dischi",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:37 AM",
+        "artist": "Jim Shepard",
+        "song": "Problem #99",
+        "release": "Panties & Perfume",
+        "label": "Siltbreeze Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:41 AM",
+        "artist": "PLOSIVS",
+        "song": "Civilized",
+        "release": "YELL AT CLOUD",
+        "label": "Swami",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:47 AM",
+        "artist": "Liiek",
+        "song": "Small Man",
+        "release": "Living In A Fiction",
+        "label": "ADAGIO830",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:51 AM",
+        "artist": "Lydia Lunch",
+        "song": "Love Split",
+        "release": "8-Eyed Spy",
+        "label": "Atavistic",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:53 AM",
+        "artist": "The Pop Group",
+        "song": "She Is Beyond Good and Evil",
+        "release": "7\"",
+        "label": "Radar Records",
+        "artist_url": null,
+        "song_url": null
+      },
+      {
+        "time": "4:58 AM",
+        "artist": "Automatic",
+        "song": "Is It Now?",
+        "release": "Is It Now?",
+        "label": "Stones Throw Records",
+        "artist_url": null,
+        "song_url": null
+      }
+    ]
+  }
+}
