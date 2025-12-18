@@ -1,0 +1,51 @@
+{
+  "frankie cosmos::vanity::different talking": {
+    "ok": true,
+    "track": {
+      "artist": "Frankie Cosmos",
+      "title": "Vanity",
+      "album": "Different Talking"
+    },
+    "seed": {
+      "provider": "deezer",
+      "seed_url": "https://www.deezer.com/track/3274226961",
+      "confidence": 1.0,
+      "matched": {
+        "artist": "Frankie Cosmos",
+        "title": "Vanity",
+        "album": "Different Talking"
+      },
+      "raw": {
+        "artist": "Frankie Cosmos",
+        "title": "Vanity",
+        "album": "Different Talking",
+        "seed_url": "https://www.deezer.com/track/3274226961"
+      }
+    },
+    "aggregated": {
+      "page_url": "https://song.link/d/3274226961",
+      "targets": {
+        "amazon_music": "https://music.amazon.com/albums/B0F16FFK3Q?trackAsin=B0F16J2TZJ",
+        "soundcloud": "https://soundcloud.com/frankie-cosmos/vanity?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+        "qobuz": null,
+        "deezer": "https://www.deezer.com/track/3274226961",
+        "tidal": "https://listen.tidal.com/track/425242189"
+      }
+    },
+    "links_by_platform": {
+      "amazonMusic": "https://music.amazon.com/albums/B0F16FFK3Q?trackAsin=B0F16J2TZJ",
+      "amazonStore": "https://amazon.com/dp/B0F16J2TZJ",
+      "audiomack": "https://audiomack.com/song/frankie-cosmos/vanity",
+      "anghami": "https://play.anghami.com/song/1214109426?refer=linktree",
+      "appleMusic": "https://geo.music.apple.com/us/album/_/1790985103?i=1790985303&mt=1&app=music&ls=1&at=1000lHKX&ct=api_http&itscg=30200&itsct=odsl_m",
+      "itunes": "https://geo.music.apple.com/us/album/_/1790985103?i=1790985303&mt=1&app=itunes&ls=1&at=1000lHKX&ct=api_http&itscg=30200&itsct=odsl_m",
+      "pandora": "https://www.pandora.com/TR:160791384",
+      "soundcloud": "https://soundcloud.com/frankie-cosmos/vanity?utm_medium=api&utm_campaign=social_sharing&utm_source=id_314547",
+      "spotify": "https://open.spotify.com/track/4XqUtpkr6NEXI5px3j9I8I",
+      "tidal": "https://listen.tidal.com/track/425242189",
+      "youtube": "https://www.youtube.com/watch?v=oK5lfRNpI1Y",
+      "youtubeMusic": "https://music.youtube.com/watch?v=oK5lfRNpI1Y",
+      "deezer": "https://www.deezer.com/track/3274226961"
+    }
+  }
+}
