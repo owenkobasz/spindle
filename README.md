@@ -1,6 +1,5 @@
 # Spindle
 
-}
 **Spindle** is part of a broader effort to move away from streaming platforms and rebuild a personal, local music library. The project started from a simple need: I wanted an easy way to turn playlists from my favorite radio shows into organized, offline copies that live alongside my own music collection.
 
 Lately, I’ve been increasingly appreciative of **human-curated content**, and public radio remains one of the strongest places where that still thrives. Spindle is designed to scrape radio playlists, match tracks against a local music library, help identify missing pieces, and export ordered playlist folders to a destination of your choice.
