@@ -1,6 +1,8 @@
-# WPRB Playlist Scraper
+# WPRB Playlist Helper
 
-A Python tool to scrape playlists from WPRB (and other Spinitron-based playlist sites), match tracks against your local music library, and create organized playlist folders with numbered tracks.
+I made this little tool as part of a larger effort to move away from streaming and rebuild a local music library. Its scope is very niche and small at this point because I basically wanted to have a way to easily create local copies of playlists from my favoirte radio shows. I've been increasingly appreciative of human curated content recently and public radio is one of the most powerful places for that. This app is designed to scrape a playlist, help you fill in any gaps within your local library, and then export a copy to a given place. I'm using it for loading SD cards to be used as playlist/album holders (cartridge-CDs if you will) for a Fiio Echo Mini, but the process is pretty general and it whould work with other public playlists as well.
+
+TL/DR: A Python tool to scrape playlists from WPRB (and other Spinitron-based playlist sites), match tracks against your local music library, and create organized playlist folders with numbered tracks.
 
 ## Features
 
