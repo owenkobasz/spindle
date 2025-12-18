@@ -2,7 +2,15 @@
 
 Spindle is part of a larger effort to move away from streaming and rebuild a local music library. Its scope is very niche and small at this point because I basically wanted to have a way to easily create local copies of playlists from my favoirte radio shows. I've been increasingly appreciative of human curated content recently and public radio is one of the most powerful places for that. This app is designed to scrape a playlist, help you fill in any gaps within your local library, and then export a copy to a given place. I'm using it for loading SD cards to be used as playlist/album holders (cartridge-CDs if you will) for a Fiio Echo Mini, but the process is pretty general and it whould work with other public playlists as well.
 
-TL/DR: A Python tool to scrape playlists from WPRB (and other Spinitron-based playlist sites), match tracks against your local music library, and create organized playlist folders with numbered tracks.
+TL/DR: A console based Python tool to scrape playlists from WPRB (and other Spinitron-based playlist sites), match tracks against your local music library, and create organized playlist folders with numbered tracks.
+
+This was also an experiemnet in vibe coding a simple program with the help of GPT, Cursor, and Notion. I'm really pleased and impressed by how it came together. I'm working on a blog post that goes into the details, but my workflow was basically: 
+- Break the idea down into parts + create an outline in Notion.
+- Have GPT create basic versions of each component.
+- Create a local project with the components and a main function that uses them in tandem.
+- Have Cursor finish connecting the dots and smooth out the rough patches.
+
+The goal with this project is to automate a tedious task and the main difficulties are those inharent with all natural language processing. I've done my best to normalizes everything but the project is only as good as the data backing it. I'm now working on importing my old music library to the same harddrive and will create a companion project to streamline library standardization. Many of those files go back to the '00s and lord only knows what the state of their orginization is.
 
 ## Features
 
