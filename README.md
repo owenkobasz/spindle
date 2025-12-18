@@ -1,20 +1,52 @@
 # Spindle
 
-Spindle is part of a larger effort to move away from streaming and rebuild a local music library. Its scope is very niche and small at this point because I basically wanted to have a way to easily create local copies of playlists from my favoirte radio shows. I've been increasingly appreciative of human curated content recently and public radio is one of the most powerful places for that. This app is designed to scrape a playlist, help you fill in any gaps within your local library, and then export a copy to a given place. I'm using it for loading SD cards to be used as playlist/album holders (cartridge-CDs if you will) for a Fiio Echo Mini, but the process is pretty general and it whould work with other public playlists as well.
+}
+**Spindle** is part of a broader effort to move away from streaming platforms and rebuild a personal, local music library. The project started from a simple need: I wanted an easy way to turn playlists from my favorite radio shows into organized, offline copies that live alongside my own music collection.
 
-TL/DR: A console based Python tool to scrape playlists from WPRB (and other Spinitron-based playlist sites), match tracks against your local music library, and create organized playlist folders with numbered tracks.
+Lately, I’ve been increasingly appreciative of **human-curated content**, and public radio remains one of the strongest places where that still thrives. Spindle is designed to scrape radio playlists, match tracks against a local music library, help identify missing pieces, and export ordered playlist folders to a destination of your choice.
 
-This was also an experiemnet in vibe coding a simple program with the help of GPT, Cursor, and Notion. I'm really pleased and impressed by how it came together. I'm working on a blog post that goes into the details, but my workflow was basically: 
-- Break the idea down into parts + create an outline in Notion.
-- Have GPT create basic versions of each component.
-- Create a local project with the components and a main function that uses them in tandem.
-- Have Cursor finish connecting the dots and smooth out the rough patches.
+I’m currently using it to load SD cards as playlist or album “cartridges” for a FiiO Echo Mini — essentially modern cartridge-CDs — but the workflow is general enough to apply to other devices and other public playlists as well.
 
-Another pain point that GPT helped me easily circumvent was fetching streaming service urls for the songs and albums. Currently the app exports amazon music urls, but it can easily share Spoitify, Tidal, Deezer, etc. I wanted these as easy reference points but was unsure how to approach it since music streaming servies geneerally don't have public APIs and are noriously hard to scrape. When brainstoriming the problem GPT, however, suggusted that I send the metadata to Deezer's API then use its link with a link-aggregator api to get the links for other streaming services. I ended up using this technique with Odesli and it works great! Itunes also has a public API, so I added it as a backup function to try if the call to Deezer fails.
+**TL;DR:**
+A console-based Python tool that scrapes playlists from WPRB (and other Spinitron-based sites), matches tracks against a local music library, and creates organized playlist folders with numbered tracks.
 
-The goal with this project is to automate a tedious task and the main difficulties are those inharent with all natural language processing. I've done my best to normalizes everything but the project is only as good as the data backing it. I'm now working on importing my old music library to the same harddrive and will create a companion project to streamline library standardization. Many of those files go back to the '00s and lord only knows what the state of their orginization is.
+---
 
+### How it works
 
+At a high level, Spindle:
+
+* Scrapes playlist metadata from Spinitron-based radio sites
+* Normalizes and matches tracks against a local library organized by Artist/Album/Track
+* Copies matched tracks into a new folder in playlist order
+* Generates manifests and metadata for auditing and reuse
+
+One pain point I didn’t initially know how to solve was generating **streaming service reference links** for tracks and albums. Most major streaming platforms don’t expose public search APIs and are notoriously difficult to scrape reliably.
+
+The solution ended up being surprisingly clean: Spindle sends track metadata to Deezer’s public API to obtain a canonical track URL, then passes that URL to a link-aggregator API (Odesli) to retrieve equivalent links for other platforms. iTunes’ public Search API is used as a fallback when Deezer fails. This approach avoids brittle scraping and works remarkably well across services like Amazon Music, Tidal, Deezer, and others.
+
+---
+
+### Notes on the build process
+
+This project was also an experiment in *vibe coding* — intentionally building a small, focused tool with the help of GPT, Cursor, and Notion. My workflow was roughly:
+
+* Break the idea into discrete components and outline them in Notion
+* Use GPT to draft initial versions of each component
+* Assemble a local project and define a clear main execution path
+* Use Cursor to connect pieces, refactor, and smooth rough edges
+
+The result came together faster and more cleanly than I expected, and I’m currently working on a longer blog post that dives deeper into this workflow.
+
+---
+
+### Limitations and next steps
+
+Like most projects that work with natural language data, Spindle is only as good as the metadata it consumes. I’ve done my best to normalize names, punctuation, and formatting, but mismatches are inevitable.
+
+My next step is importing my older music archive into the same drive and building a companion tool to help standardize and clean that library. Many of those files date back to the early 2000s, and their organization is… optimistic at best.
+
+---
 
 ## Features
 
