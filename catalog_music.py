@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import shutil
 import unicodedata
+import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -22,6 +23,15 @@ except ImportError:
 
 # Reuse audio extensions from other modules
 AUDIO_EXTS = {".mp3", ".m4a", ".flac", ".wav", ".aiff", ".aif", ".ogg", ".opus", ".alac"}
+
+# Common image extensions for album artwork
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+
+# Common artwork filenames (case-insensitive)
+ARTWORK_NAMES = {"cover", "folder", "album", "artwork", "front", "albumart"}
+
+# Archive file extensions
+ARCHIVE_EXTS = {".zip", ".rar", ".7z", ".tar", ".gz"}
 
 
 def _norm_for_matching(s: str) -> str:
@@ -244,6 +254,137 @@ def _merge_metadata(tag_metadata: Dict[str, Optional[str]],
     return result
 
 
+def _find_archive_files(drop_location: Path) -> List[Path]:
+    """Find all archive files (zip, etc.) in the drop location (recursively)."""
+    archive_files = []
+    
+    if not drop_location.exists():
+        return archive_files
+    
+    for path in drop_location.rglob("*"):
+        if path.is_file() and path.suffix.lower() in ARCHIVE_EXTS:
+            archive_files.append(path)
+    
+    return sorted(archive_files)
+
+
+def _extract_zip_file(zip_path: Path, extract_to: Optional[Path] = None, 
+                     show_progress: bool = True) -> Path:
+    """
+    Extract a zip file to a directory.
+    
+    Parameters
+    ----------
+    zip_path : Path
+        Path to the zip file to extract
+    extract_to : Path, optional
+        Directory to extract to. If None, extracts to a directory with the same name
+        as the zip file (without extension) in the same location.
+    show_progress : bool
+        If True, show a progress bar for extraction
+    
+    Returns
+    -------
+    Path to the extraction directory
+    
+    Raises
+    ------
+    zipfile.BadZipFile
+        If the file is not a valid zip file
+    """
+    if extract_to is None:
+        # Extract to a directory with the same name as the zip (without extension)
+        extract_to = zip_path.parent / zip_path.stem
+    
+    # Create extraction directory if it doesn't exist
+    extract_to.mkdir(parents=True, exist_ok=True)
+    
+    # Extract the zip file with progress bar
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        file_list = zip_ref.namelist()
+        total_files = len(file_list)
+        
+        if show_progress and total_files > 0:
+            # Show progress bar for extraction
+            with tqdm(total=total_files, desc=f"  Extracting {zip_path.name}", 
+                     unit="file", leave=False) as pbar:
+                for member in file_list:
+                    zip_ref.extract(member, extract_to)
+                    pbar.update(1)
+        else:
+            # Extract all at once if no progress bar needed
+            zip_ref.extractall(extract_to)
+    
+    return extract_to
+
+
+def _extract_archives(drop_location: Path, remove_after_extract: bool = False, 
+                     max_iterations: int = 10) -> List[Path]:
+    """
+    Find and extract all archive files in the drop location (recursively).
+    
+    This function will extract archives and then look for more archives in the
+    extracted directories, up to max_iterations to handle nested archives.
+    
+    Parameters
+    ----------
+    drop_location : Path
+        Directory to search for archive files
+    remove_after_extract : bool
+        If True, remove archive files after successful extraction
+    max_iterations : int
+        Maximum number of extraction passes (to handle nested archives)
+    
+    Returns
+    -------
+    List of Path objects for extracted directories
+    """
+    extracted_dirs = []
+    iteration = 0
+    
+    while iteration < max_iterations:
+        archive_files = _find_archive_files(drop_location)
+        
+        if not archive_files:
+            # No more archives found, we're done
+            break
+        
+        iteration += 1
+        
+        # Show progress for this iteration
+        if iteration > 1:
+            desc = f"Extracting nested archives (pass {iteration})"
+        else:
+            desc = "Extracting archives"
+        
+        new_extractions = []
+        
+        # Progress bar for archives in this iteration
+        with tqdm(archive_files, desc=desc, unit="archive", leave=False) as archive_pbar:
+            for archive_path in archive_pbar:
+                archive_pbar.set_postfix(file=archive_path.name[:40])
+                try:
+                    # Only handle zip files for now (most common)
+                    if archive_path.suffix.lower() == ".zip":
+                        extract_dir = _extract_zip_file(archive_path, show_progress=True)
+                        new_extractions.append(extract_dir)
+                        extracted_dirs.append(extract_dir)
+                        
+                        # Optionally remove the zip file after extraction
+                        if remove_after_extract:
+                            archive_path.unlink()
+                except (zipfile.BadZipFile, zipfile.LargeZipFile, Exception) as e:
+                    # Skip invalid or problematic zip files
+                    archive_pbar.write(f"  ⚠ Skipped {archive_path.name}: {str(e)[:50]}")
+                    continue
+        
+        # If we didn't extract anything new, we're done
+        if not new_extractions:
+            break
+    
+    return extracted_dirs
+
+
 def _find_audio_files(drop_location: Path) -> List[Path]:
     """Find all audio files in the drop location (recursively)."""
     audio_files = []
@@ -290,11 +431,105 @@ def _check_duplicate(library_root: Path, artist: str, album: str, title: str,
     return None
 
 
+def _find_artwork_files(source_dir: Path) -> List[Path]:
+    """
+    Find artwork files in a directory.
+    
+    Looks for common artwork filenames (cover.jpg, folder.jpg, etc.)
+    or any image file in the directory.
+    
+    Parameters
+    ----------
+    source_dir : Path
+        Directory to search for artwork files
+    
+    Returns
+    -------
+    List of Path objects for found artwork files
+    """
+    artwork_files = []
+    
+    if not source_dir.exists() or not source_dir.is_dir():
+        return artwork_files
+    
+    # Build a case-insensitive mapping of existing files
+    existing_files = {}
+    for path in source_dir.iterdir():
+        if path.is_file():
+            existing_files[path.name.lower()] = path
+    
+    # First, look for common artwork filenames (case-insensitive)
+    for artwork_name in ARTWORK_NAMES:
+        for ext in IMAGE_EXTS:
+            # Try lowercase first (most common)
+            pattern_lower = (artwork_name + ext).lower()
+            if pattern_lower in existing_files:
+                artwork_files.append(existing_files[pattern_lower])
+                break  # Found one, move to next artwork name
+    
+    # If no common names found, look for any image file
+    if not artwork_files:
+        for path in source_dir.iterdir():
+            if path.is_file() and path.suffix.lower() in IMAGE_EXTS:
+                artwork_files.append(path)
+                break  # Just take the first image file found
+    
+    return artwork_files
+
+
+def _copy_artwork_files(source_dir: Path, dest_album_dir: Path, 
+                        move_files: bool = True, skip_existing: bool = True) -> List[Path]:
+    """
+    Copy or move artwork files from source directory to destination album directory.
+    
+    Parameters
+    ----------
+    source_dir : Path
+        Source directory containing artwork files
+    dest_album_dir : Path
+        Destination album directory in library
+    move_files : bool
+        If True, move files. If False, copy files.
+    skip_existing : bool
+        If True, skip artwork files that already exist in destination.
+    
+    Returns
+    -------
+    List of Path objects for successfully copied/moved artwork files
+    """
+    artwork_files = _find_artwork_files(source_dir)
+    copied_files = []
+    
+    for artwork_path in artwork_files:
+        try:
+            dest_path = dest_album_dir / artwork_path.name
+            
+            # Check if artwork already exists
+            if skip_existing and dest_path.exists():
+                continue
+            
+            # Copy or move the artwork file
+            if move_files:
+                shutil.move(str(artwork_path), str(dest_path))
+            else:
+                shutil.copy2(str(artwork_path), str(dest_path))
+            
+            copied_files.append(dest_path)
+        except Exception:
+            # Silently skip artwork files that can't be copied
+            # (e.g., permission errors, already moved, etc.)
+            pass
+    
+    return copied_files
+
+
 def catalog_music(
     drop_location: str | Path,
     library_root: str | Path,
     move_files: bool = True,
     skip_duplicates: bool = True,
+    extract_archives: bool = True,
+    remove_archives_after_extract: bool = False,
 ) -> Dict[str, Any]:
     """
     Catalog music files from a drop location into the library.
@@ -309,6 +544,10 @@ def catalog_music(
         If True, move files to library. If False, copy files.
     skip_duplicates : bool
         If True, skip files that already exist in library. If False, allow duplicates.
+    extract_archives : bool
+        If True, automatically extract zip files found in drop location before cataloging.
+    remove_archives_after_extract : bool
+        If True, remove archive files after successful extraction. Only used if extract_archives=True.
     
     Returns
     -------
@@ -333,12 +572,25 @@ def catalog_music(
             "mutagen is required for cataloging. Install it with: pip install mutagen"
         )
     
+    # Extract zip files if requested
+    if extract_archives:
+        archive_files = _find_archive_files(drop_path)
+        if archive_files:
+            extracted_dirs = _extract_archives(drop_path, remove_after_extract=remove_archives_after_extract)
+            if extracted_dirs:
+                # Progress bar will have already shown the extraction progress
+                pass
+    
     audio_files = _find_audio_files(drop_path)
     
     results = []
     cataloged = 0
     skipped = 0
     errors = []
+    
+    # Track which source album directories have had artwork processed
+    # Key: (source_dir, dest_album_dir), Value: True if processed
+    processed_artwork_dirs = set()
     
     progress_bar = tqdm(audio_files, desc="Cataloging files", unit="file")
     for file_path in progress_bar:
@@ -403,6 +655,22 @@ def catalog_music(
                 shutil.move(str(file_path), str(dest_path))
             else:
                 shutil.copy2(str(file_path), str(dest_path))
+            
+            # Process artwork files from the source album directory
+            # Only process once per source album directory
+            source_album_dir = file_path.parent
+            artwork_key = (str(source_album_dir), str(album_dir))
+            
+            if artwork_key not in processed_artwork_dirs:
+                copied_artwork = _copy_artwork_files(
+                    source_album_dir, 
+                    album_dir, 
+                    move_files=move_files,
+                    skip_existing=skip_duplicates
+                )
+                if copied_artwork:
+                    progress_bar.write(f"  📷 Artwork: {len(copied_artwork)} file(s) → {album_dir.relative_to(library_path)}")
+                processed_artwork_dirs.add(artwork_key)
             
             result["status"] = "cataloged"
             result["destination_path"] = str(dest_path)
