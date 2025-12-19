@@ -7,6 +7,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
+    from tqdm import tqdm
+except ImportError:
+    # Fallback if tqdm is not available
+    def tqdm(iterable, *args, **kwargs):
+        return iterable
+
+try:
     from mutagen import File as MutagenFile
     from mutagen.id3 import ID3NoHeaderError
     MUTAGEN_AVAILABLE = True
@@ -299,7 +306,7 @@ def catalog_music(
     skipped = 0
     errors = []
     
-    for file_path in audio_files:
+    for file_path in tqdm(audio_files, desc="Cataloging files", unit="file"):
         result = {
             "source_path": str(file_path),
             "status": "pending",

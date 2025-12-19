@@ -488,7 +488,6 @@ def catalog_new_music(base_folder: str, library_subpath: str) -> None:
     
     print()
     print("Scanning for audio files...")
-    print("Please wait...")
     
     try:
         result = catalog_music(
@@ -499,7 +498,7 @@ def catalog_new_music(base_folder: str, library_subpath: str) -> None:
         )
         
         print_separator()
-        print("CATALOGING COMPLETE")
+        print_title("CATALOGING COMPLETE")
         print_separator()
         print(f"Total files found: {result['total_files']}")
         print(f"✓ Cataloged: {result['cataloged']}")
