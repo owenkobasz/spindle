@@ -523,6 +523,78 @@ def _copy_artwork_files(source_dir: Path, dest_album_dir: Path,
     return copied_files
 
 
+def _cleanup_drop_location(drop_location: Path) -> Dict[str, Any]:
+    """
+    Delete all files and empty directories from the drop location.
+    
+    This function safely removes all files and empty directories from the
+    drop location after cataloging is complete.
+    
+    Parameters
+    ----------
+    drop_location : Path
+        Directory to clean up
+    
+    Returns
+    -------
+    Dict with cleanup summary:
+        - files_deleted: Number of files deleted
+        - dirs_deleted: Number of directories deleted
+        - errors: List of error messages
+    """
+    files_deleted = 0
+    dirs_deleted = 0
+    errors = []
+    
+    if not drop_location.exists() or not drop_location.is_dir():
+        return {
+            "files_deleted": 0,
+            "dirs_deleted": 0,
+            "errors": ["Drop location does not exist or is not a directory"]
+        }
+    
+    # First, delete all files recursively
+    for path in drop_location.rglob("*"):
+        if path.is_file():
+            try:
+                path.unlink()
+                files_deleted += 1
+            except Exception as e:
+                errors.append(f"Failed to delete {path}: {e}")
+    
+    # Then, delete empty directories (bottom-up, deepest first)
+    # Get all directories, sort by depth (deepest first)
+    dirs_to_check = []
+    for path in drop_location.rglob("*"):
+        if path.is_dir():
+            # Calculate depth relative to drop_location
+            depth = len(path.relative_to(drop_location).parts)
+            dirs_to_check.append((depth, path))
+    
+    # Sort by depth descending (deepest first)
+    dirs_to_check.sort(reverse=True, key=lambda x: x[0])
+    
+    # Delete empty directories
+    for depth, dir_path in dirs_to_check:
+        try:
+            # Only delete if directory is empty
+            if dir_path.exists() and not any(dir_path.iterdir()):
+                dir_path.rmdir()
+                dirs_deleted += 1
+        except Exception as e:
+            errors.append(f"Failed to delete directory {dir_path}: {e}")
+    
+    # Finally, try to delete the drop_location itself if it's empty
+    # (but only if it's not the root drop_location - we'll leave that)
+    # Actually, we should leave the drop_location itself, just clean its contents
+    
+    return {
+        "files_deleted": files_deleted,
+        "dirs_deleted": dirs_deleted,
+        "errors": errors
+    }
+
+
 def catalog_music(
     drop_location: str | Path,
     library_root: str | Path,
@@ -530,6 +602,7 @@ def catalog_music(
     skip_duplicates: bool = True,
     extract_archives: bool = True,
     remove_archives_after_extract: bool = False,
+    cleanup_drop_location: bool = False,
 ) -> Dict[str, Any]:
     """
     Catalog music files from a drop location into the library.
@@ -548,6 +621,9 @@ def catalog_music(
         If True, automatically extract zip files found in drop location before cataloging.
     remove_archives_after_extract : bool
         If True, remove archive files after successful extraction. Only used if extract_archives=True.
+    cleanup_drop_location : bool
+        If True, delete all files and empty directories from drop location after cataloging.
+        WARNING: This will permanently delete all files in the drop location!
     
     Returns
     -------
@@ -557,6 +633,7 @@ def catalog_music(
         - skipped: Number skipped (duplicates or errors)
         - errors: List of error messages
         - results: List of per-file results
+        - cleanup: Dict with cleanup summary (if cleanup_drop_location=True)
     """
     drop_path = Path(drop_location).expanduser().resolve()
     library_path = Path(library_root).expanduser().resolve()
@@ -686,11 +763,26 @@ def catalog_music(
         
         results.append(result)
     
-    return {
+    # Cleanup drop location if requested
+    cleanup_summary = None
+    if cleanup_drop_location:
+        print("\nCleaning up drop location...")
+        cleanup_summary = _cleanup_drop_location(drop_path)
+        if cleanup_summary["files_deleted"] > 0 or cleanup_summary["dirs_deleted"] > 0:
+            print(f"  Deleted {cleanup_summary['files_deleted']} file(s) and {cleanup_summary['dirs_deleted']} directory(ies)")
+        if cleanup_summary["errors"]:
+            print(f"  ⚠ {len(cleanup_summary['errors'])} error(s) during cleanup")
+    
+    result_dict = {
         "total_files": len(audio_files),
         "cataloged": cataloged,
         "skipped": skipped,
         "errors": errors,
         "results": results,
     }
+    
+    if cleanup_summary is not None:
+        result_dict["cleanup"] = cleanup_summary
+    
+    return result_dict
 

@@ -72,8 +72,13 @@ def derive_artifact_stem(meta: dict, custom_name: str = None) -> str:
         custom_name: Optional custom name to use instead of auto-generated slug
     
     Returns:
-        Stem like "2025-12-17_lady-love" or "2025-12-17_custom-name"
+        Stem like "2025-12-17_lady-love" (auto-generated) or "custom-name" (when custom_name provided)
     """
+    # Use custom name if provided (without date prefix)
+    if custom_name:
+        slug = safe_slug(custom_name)
+        return slug
+    
     # Extract date from fetched_at_utc (YYYY-MM-DD)
     date_str = ""
     fetched_at = meta.get("fetched_at_utc", "")
@@ -82,11 +87,6 @@ def derive_artifact_stem(meta: dict, custom_name: str = None) -> str:
     else:
         # Fallback to today's date
         date_str = datetime.now().strftime("%Y-%m-%d")
-    
-    # Use custom name if provided
-    if custom_name:
-        slug = safe_slug(custom_name)
-        return f"{date_str}_{slug}"
     
     # Extract slug from canonical_url or page_title
     slug = ""
@@ -318,6 +318,67 @@ def print_track_list_with_links(tracks: list[dict], title: str = "ENRICHED TRACK
                 print(f"       Album: (no links found)")
         
         print()
+    print()
+
+
+def print_album_links_summary(tracks: list[dict], title: str = "ALBUM LINKS SUMMARY") -> None:
+    """
+    Print a summary of all unique album links found in the tracks.
+    
+    Args:
+        tracks: List of track dictionaries with 'album_share_links' keys
+        title: Title to display above the album links list
+    """
+    if not tracks:
+        return
+    
+    # Collect unique album links, prioritizing Amazon Music
+    album_links_map = {}  # Maps (artist, album) -> {service: url}
+    
+    for track in tracks:
+        album_links = track.get('album_share_links', {})
+        if not album_links:
+            continue
+        
+        artist = track.get('artist', 'Unknown Artist')
+        album = track.get('album', 'Unknown Album')
+        key = (artist, album)
+        
+        # Store links for this album (prioritize Amazon Music if available)
+        if key not in album_links_map:
+            album_links_map[key] = {}
+        
+        # Prefer Amazon Music, but store all available services
+        if 'amazon_music' in album_links:
+            album_links_map[key]['amazon_music'] = album_links['amazon_music']
+        else:
+            # Store first available service
+            for service, url in album_links.items():
+                if service not in album_links_map[key]:
+                    album_links_map[key][service] = url
+                    break
+    
+    if not album_links_map:
+        return
+    
+    print_title(title)
+    
+    # Sort by artist, then album
+    sorted_albums = sorted(album_links_map.items(), key=lambda x: (x[0][0].lower(), x[0][1].lower()))
+    
+    for i, ((artist, album), links) in enumerate(sorted_albums, 1):
+        #print(f"  {i:3d}. {artist} - {album}")
+        
+        # Print links (prioritize Amazon Music)
+        if 'amazon_music' in links:
+            print(f"{links['amazon_music']}")
+        elif links:
+            # Show first available service
+            service, url = next(iter(links.items()))
+            service_name = service.replace('_', ' ').title()
+            print(f"       ({service_name}) {url}")
+        
+        #print()
     print()
 
 
@@ -837,9 +898,12 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         print()
         return match_json_path
     
-    # Print track list that will be enriched
+    # Get total tracks count from match result
+    total_tracks = match_result.get("summary", {}).get("total_tracks", len(tracks_to_enrich))
+    
+    # Print title with count (without listing individual tracks)
     enrich_type = "MISSING TRACKS" if missing_only else "ALL TRACKS"
-    print_track_list(tracks_to_enrich, f"{enrich_type} TO ENRICH ({len(tracks_to_enrich)} tracks)")
+    print_title(f"{enrich_type} TO ENRICH ({len(tracks_to_enrich)} tracks/{total_tracks})")
     
     print(f"Enriching {len(tracks_to_enrich)} track(s) with streaming links...")
     print()
@@ -904,6 +968,9 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         # Print enriched track list with links
         enrich_type = "ENRICHED MISSING TRACKS" if missing_only else "ENRICHED TRACKS"
         print_track_list_with_links(tracks_to_enrich, f"{enrich_type} ({len(tracks_to_enrich)} tracks)")
+        
+        # Print album links summary
+        print_album_links_summary(tracks_to_enrich)
         
         return output_path
         
