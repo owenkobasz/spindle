@@ -457,29 +457,19 @@ def find_share_urls_from_metadata(
             "tidal": links.get("tidal"),
         }
 
-        # 4) Search for album URLs if album is provided
-        album_seed = None
-        album_aggregated = None
+        # 4) Derive album links from track links
+        # For Amazon Music, the album link is the track link with query string removed
         album_targets = {}
-        album_links_by_platform = {}
+        track_amazon = targets.get("amazon_music")
+        if track_amazon and isinstance(track_amazon, str):
+            # Remove everything after the '?' to get the album link
+            # If there's no '?', the track URL is already the album URL
+            album_amazon = track_amazon.split('?', 1)[0]
+            # Always add the album link if we have a track link
+            album_targets["amazon_music"] = album_amazon
         
-        if track.album:
-            album_seed = deezer_search_album_seed(track, session)
-            if album_seed is None:
-                album_seed = itunes_search_album_seed(track, session)
-            
-            if album_seed:
-                album_aggregated = odesli_expand(album_seed["seed_url"], session)
-                album_links = album_aggregated["links_by_platform"]
-                
-                album_targets = {
-                    "amazon_music": album_links.get("amazonMusic") or album_links.get("amazon"),
-                    "soundcloud": album_links.get("soundcloud"),
-                    "qobuz": album_links.get("qobuz"),
-                    "deezer": album_links.get("deezer"),
-                    "tidal": album_links.get("tidal"),
-                }
-                album_links_by_platform = album_links
+        # For other services, we could potentially derive album links similarly
+        # but for now, only Amazon Music supports this pattern
 
         result = {
             "ok": True,
@@ -491,13 +481,10 @@ def find_share_urls_from_metadata(
             },
             # Keep full links map if you want everything, not just the targets
             "links_by_platform": links,
-            # Album links
-            "album_seed": album_seed,
+            # Album links derived from track links
             "album_aggregated": {
-                "page_url": album_aggregated.get("page_url") if album_aggregated else None,
                 "targets": album_targets,
-            } if album_aggregated else None,
-            "album_links_by_platform": album_links_by_platform if album_links_by_platform else {},
+            } if album_targets else None,
         }
 
         if use_cache and cache is not None:

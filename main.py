@@ -63,15 +63,16 @@ def safe_slug(text: str) -> str:
     return slug or "unknown"
 
 
-def derive_artifact_stem(meta: dict) -> str:
+def derive_artifact_stem(meta: dict, custom_name: str = None) -> str:
     """
     Derive an artifact filename stem from playlist metadata.
     
     Args:
         meta: Playlist metadata dict
+        custom_name: Optional custom name to use instead of auto-generated slug
     
     Returns:
-        Stem like "2025-12-17_lady-love"
+        Stem like "2025-12-17_lady-love" or "2025-12-17_custom-name"
     """
     # Extract date from fetched_at_utc (YYYY-MM-DD)
     date_str = ""
@@ -81,6 +82,11 @@ def derive_artifact_stem(meta: dict) -> str:
     else:
         # Fallback to today's date
         date_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # Use custom name if provided
+    if custom_name:
+        slug = safe_slug(custom_name)
+        return f"{date_str}_{slug}"
     
     # Extract slug from canonical_url or page_title
     slug = ""
@@ -361,8 +367,10 @@ def display_missing_tracks(match_result: dict) -> list[dict]:
                     if track_amazon:
                         print(f"   Track: {track_amazon}")
                     
-                    # Album link
-                    album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music') if link_result.get('album_aggregated') else None
+                    # Album link (derived from track link by removing query string)
+                    album_amazon = None
+                    if link_result.get('album_aggregated'):
+                        album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music')
                     if album_amazon:
                         print(f"   Album: {album_amazon}")
                     
@@ -593,8 +601,10 @@ def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
                     if track_amazon:
                         print(f"    Track: {track_amazon}")
                     
-                    # Album link
-                    album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music') if link_result.get('album_aggregated') else None
+                    # Album link (derived from track link by removing query string)
+                    album_amazon = None
+                    if link_result.get('album_aggregated'):
+                        album_amazon = link_result.get('album_aggregated', {}).get('targets', {}).get('amazon_music')
                     if album_amazon:
                         print(f"    Album: {album_amazon}")
             except Exception:
@@ -624,13 +634,70 @@ def confirm_skip_tracks(still_missing: list[dict]) -> list[dict]:
 # Stage functions
 # ----------------------------
 
-def run_scrape(url: str, artifacts_dir: Path) -> Path:
+def _scrape_and_prompt_name(url: str, artifacts_dir: Path, prompt_for_name: bool = True) -> tuple[dict, Path]:
+    """
+    Helper function to scrape a playlist and optionally prompt for a custom name.
+    
+    Args:
+        url: Playlist URL to scrape
+        artifacts_dir: Directory to save artifacts
+        prompt_for_name: Whether to prompt the user for a custom name
+    
+    Returns:
+        Tuple of (playlist_data, output_path)
+    """
+    print_title("STAGE 1: SCRAPING PLAYLIST")
+    print(f"Scraping: {url}")
+    print("Please wait...")
+    print()
+    
+    playlist_data = playlist_scraper(url)
+    track_count = playlist_data.get("meta", {}).get("track_count", 0)
+    playlist_title = playlist_data.get("meta", {}).get("playlist_title", "Unknown")
+    
+    # Generate default name
+    default_stem = derive_artifact_stem(playlist_data.get("meta", {}))
+    # Extract just the name part (without date prefix) for the prompt default
+    default_name = default_stem.split('_', 1)[1] if '_' in default_stem else default_stem
+    # Full filename that will be used
+    default_filename = f"{default_stem}.playlist.json"
+    
+    print(f"✓ Successfully scraped playlist: {playlist_title}")
+    print(f"✓ Found {track_count} tracks")
+    print()
+    
+    # Prompt for custom name if requested
+    custom_name = None
+    if prompt_for_name:
+        print("Enter a custom name for this playlist artifact.")
+        print(f"Auto-generated name: {default_filename}")
+        print("(Enter a custom name, or press Enter to use the auto-generated name)")
+        print()
+        custom_name_input = prompt_user("Playlist name", default_name).strip()
+        if custom_name_input and custom_name_input != default_name:
+            custom_name = custom_name_input
+    
+    # Derive artifact filename with custom name (or use default)
+    stem = derive_artifact_stem(playlist_data.get("meta", {}), custom_name=custom_name)
+    output_path = artifacts_dir / f"{stem}.playlist.json"
+    
+    # Save playlist JSON
+    save_json(playlist_data, output_path)
+    
+    print(f"✓ Saved to: {output_path}")
+    print()
+    
+    return playlist_data, output_path
+
+
+def run_scrape(url: str, artifacts_dir: Path, custom_name: str = None) -> Path:
     """
     Stage 1: Scrape playlist from URL and save to JSON artifact.
     
     Args:
         url: Playlist URL to scrape
         artifacts_dir: Directory to save artifacts
+        custom_name: Optional custom name for the artifact (will be slugified)
     
     Returns:
         Path to saved playlist JSON file
@@ -645,7 +712,7 @@ def run_scrape(url: str, artifacts_dir: Path) -> Path:
         playlist_title = playlist_data.get("meta", {}).get("playlist_title", "Unknown")
         
         # Derive artifact filename
-        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        stem = derive_artifact_stem(playlist_data.get("meta", {}), custom_name=custom_name)
         output_path = artifacts_dir / f"{stem}.playlist.json"
         
         # Save playlist JSON
@@ -715,6 +782,21 @@ def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, 
         print(f"✓ Matched {found} of {total} tracks")
         if missing > 0:
             print(f"⚠ {missing} tracks not found in library")
+            print()
+            
+            # Display missing tracks with artist, album, and track info
+            missing_tracks = [r for r in match_result["results"] if r["match_status"] == "missing"]
+            if missing_tracks:
+                print_title(f"MISSING TRACKS ({len(missing_tracks)} of {total})")
+                for i, track in enumerate(missing_tracks, 1):
+                    artist = track.get('artist', 'Unknown Artist')
+                    song = track.get('song', 'Unknown Song')
+                    album = track.get('album', '')
+                    
+                    print(f"  {i:3d}. {artist} - {song}")
+                    if album:
+                        print(f"       Album: {album}")
+                print()
         else:
             print("✓ All tracks found in library!")
         print(f"✓ Saved to: {output_path}")
@@ -923,9 +1005,12 @@ def run_guided_pipeline(base_folder: str, library_subpath: str, artifacts_dir: P
         print("Error: URL is required.")
         sys.exit(1)
     
-    # Stage 1: Scrape
-    playlist_json_path = run_scrape(url, artifacts_dir)
-    playlist_data = load_json(playlist_json_path)
+    # Stage 1: Scrape (with optional custom name)
+    try:
+        playlist_data, playlist_json_path = _scrape_and_prompt_name(url, artifacts_dir, prompt_for_name=True)
+    except Exception as e:
+        print(f"Error scraping playlist: {e}")
+        raise
     
     # Stage 2: Match
     match_json_path = run_match(playlist_json_path, base_folder, library_subpath, artifacts_dir)
@@ -1137,6 +1222,46 @@ def list_artifacts(artifact_type: str = None) -> list[Path]:
     return artifacts
 
 
+def group_artifacts_by_stem() -> dict[str, list[Path]]:
+    """
+    Group artifact files by their stem (the part before the type suffix).
+    
+    Returns:
+        Dict mapping stem to list of Path objects for that stem
+        Example: {"2025-12-19_playlist-name": [playlist.json, match.json, enriched.json]}
+    """
+    if not ARTIFACTS_DIR.exists():
+        return {}
+    
+    grouped = {}
+    
+    for path in ARTIFACTS_DIR.glob("*.json"):
+        if not path.is_file():
+            continue
+        
+        # Extract stem from filename like "2025-12-19_name.playlist.json"
+        # or "2025-12-19_name.match.json"
+        stem = path.stem  # Gets "2025-12-19_name.playlist" or "2025-12-19_name.match"
+        
+        # Remove the type suffix (.playlist, .match, .enriched)
+        if stem.endswith(".playlist"):
+            stem = stem[:-9]  # Remove ".playlist"
+        elif stem.endswith(".match"):
+            stem = stem[:-6]  # Remove ".match"
+        elif stem.endswith(".enriched"):
+            stem = stem[:-9]  # Remove ".enriched"
+        
+        if stem not in grouped:
+            grouped[stem] = []
+        grouped[stem].append(path)
+    
+    # Sort files within each group by modification time (newest first)
+    for stem in grouped:
+        grouped[stem].sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    
+    return grouped
+
+
 def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool = True, 
                      expected_json_type: str = None, show_artifacts: bool = False) -> Path:
     """
@@ -1163,31 +1288,56 @@ def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool
             if len(artifacts) > 10:
                 print(f"  ... and {len(artifacts) - 10} more")
             print()
-            if prompt_yes_no("Use one of these files?", default=False):
-                while True:
+            max_num = min(10, len(artifacts))
+            choice_str = prompt_user(f"Enter number (1-{max_num}) to select, 'n' for custom path, or enter path directly", "").strip()
+            
+            if choice_str:
+                # Check if it's 'n' for custom path - fall through to path input below
+                if choice_str.lower() == 'n':
+                    # Fall through to path input loop below
+                    pass
+                else:
+                    # Try to parse as number
                     try:
-                        choice_str = prompt_user(f"Enter number (1-{min(10, len(artifacts))}) or path")
-                        if not choice_str:
-                            break
-                        # Try to parse as number
+                        choice_num = int(choice_str)
+                        if 1 <= choice_num <= max_num:
+                            return artifacts[choice_num - 1].resolve()
+                        else:
+                            print(f"Error: Please enter a number between 1 and {max_num}")
+                            print()
+                            # Fall through to path input loop
+                    except ValueError:
+                        # Treat as path directly
                         try:
-                            choice_num = int(choice_str)
-                            if 1 <= choice_num <= min(10, len(artifacts)):
-                                return artifacts[choice_num - 1].resolve()
-                            else:
-                                print(f"Please enter a number between 1 and {min(10, len(artifacts))}")
-                                continue
-                        except ValueError:
-                            # Not a number, treat as path
-                            break
-                    except (KeyboardInterrupt, EOFError):
-                        break
+                            path = Path(choice_str).expanduser()
+                            
+                            # If path is relative and artifacts dir exists, check there first
+                            if not path.is_absolute() and ARTIFACTS_DIR.exists():
+                                artifact_path = ARTIFACTS_DIR / choice_str
+                                if artifact_path.exists():
+                                    path = artifact_path
+                            
+                            if must_exist:
+                                if expected_json_type:
+                                    validate_json_file(path, expected_json_type)
+                                else:
+                                    validate_file_path(path, file_type)
+                            
+                            return path.resolve()
+                        except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
+                            print(f"Error: {e}")
+                            print()
+                            # Fall through to path input loop
+            else:
+                # Empty input - fall through to path input loop
+                pass
     
     while True:
         path_str = prompt_user(prompt_text)
         if not path_str:
             print(f"Error: {file_type.capitalize()} path is required.")
             if not prompt_yes_no("Try again?", default=True):
+                print("Goodbye!")
                 raise SystemExit(0)
             continue
         
@@ -1219,11 +1369,13 @@ def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool
                         print(f"  - {artifact.name}")
             if prompt_yes_no("Try again?", default=True):
                 continue
+            print("Goodbye!")
             raise SystemExit(0)
         except (ValueError, json.JSONDecodeError) as e:
             print(f"Error: {e}")
             if prompt_yes_no("Try again?", default=True):
                 continue
+            print("Goodbye!")
             raise SystemExit(0)
 
 
@@ -1240,7 +1392,8 @@ def display_main_menu() -> None:
     print("4. Export playlist folder (from match report or playlist JSON)")
     print("5. Catalog new music into library")
     print("6. Run full pipeline (guided)")
-    print("7. Quit")
+    print("7. Clean up old playlist artifacts")
+    print("8. Quit")
     print()
 
 
@@ -1290,9 +1443,13 @@ def handle_scrape_option() -> bool:
         if not url:
             return prompt_yes_no("Return to main menu?", default=True)
         
-        run_scrape(url, ARTIFACTS_DIR)
-        print("\n✓ Stage 1 completed successfully!")
-        return True
+        try:
+            _, output_path = _scrape_and_prompt_name(url, ARTIFACTS_DIR, prompt_for_name=True)
+            print("\n✓ Stage 1 completed successfully!")
+            return True
+        except Exception as e:
+            print(f"Error scraping playlist: {e}")
+            raise
         
     except KeyboardInterrupt:
         print("\n\nOperation cancelled by user.")
@@ -1440,6 +1597,118 @@ def handle_guided_pipeline_option() -> bool:
         return handle_operation_error(e, "Guided Pipeline")
 
 
+def handle_cleanup_option() -> bool:
+    """
+    Handle menu option 7: Clean up old playlist artifacts.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        print_title("CLEAN UP ARTIFACTS")
+        
+        # Group artifacts by stem
+        grouped = group_artifacts_by_stem()
+        
+        if not grouped:
+            print("No artifacts found to clean up.")
+            print()
+            return True
+        
+        # Sort stems by date (newest first)
+        stems = sorted(grouped.keys(), key=lambda s: s.split('_')[0] if '_' in s else '', reverse=True)
+        
+        print(f"Found {len(stems)} playlist artifact group(s):")
+        print()
+        
+        # Display grouped artifacts
+        for i, stem in enumerate(stems, 1):
+            files = grouped[stem]
+            file_types = [f.stem.split('.')[-1] if '.' in f.stem else 'unknown' for f in files]
+            file_types_str = ', '.join(sorted(set(file_types)))
+            
+            # Get the most recent modification time
+            most_recent = max(f.stat().st_mtime for f in files)
+            date_str = datetime.fromtimestamp(most_recent).strftime("%Y-%m-%d %H:%M")
+            
+            print(f"  {i}. {stem}")
+            print(f"     Files: {file_types_str} ({len(files)} file(s))")
+            print(f"     Last modified: {date_str}")
+            print()
+        
+        # Prompt for selection
+        print("Enter the numbers of the artifact groups to delete (comma-separated),")
+        print("or 'all' to delete everything, or press Enter to cancel.")
+        print()
+        selection = prompt_user("Selection", "").strip()
+        
+        if not selection:
+            print("Cleanup cancelled.")
+            print()
+            return True
+        
+        # Parse selection
+        stems_to_delete = []
+        if selection.lower() == 'all':
+            stems_to_delete = stems
+        else:
+            try:
+                indices = [int(x.strip()) for x in selection.split(',')]
+                for idx in indices:
+                    if 1 <= idx <= len(stems):
+                        stems_to_delete.append(stems[idx - 1])
+                    else:
+                        print(f"Warning: Invalid number {idx}, skipping.")
+            except ValueError:
+                print("Error: Invalid selection format. Please enter numbers separated by commas.")
+                return prompt_yes_no("Return to main menu?", default=True)
+        
+        if not stems_to_delete:
+            print("No artifacts selected for deletion.")
+            print()
+            return True
+        
+        # Confirm deletion
+        total_files = sum(len(grouped[stem]) for stem in stems_to_delete)
+        print()
+        print(f"You are about to delete {len(stems_to_delete)} artifact group(s) ({total_files} file(s) total):")
+        for stem in stems_to_delete:
+            print(f"  - {stem} ({len(grouped[stem])} file(s))")
+        print()
+        
+        if not prompt_yes_no("Are you sure you want to delete these artifacts?", default=False):
+            print("Deletion cancelled.")
+            print()
+            return True
+        
+        # Delete the files
+        deleted_count = 0
+        failed_count = 0
+        
+        for stem in stems_to_delete:
+            for file_path in grouped[stem]:
+                try:
+                    file_path.unlink()
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"Error deleting {file_path.name}: {e}")
+                    failed_count += 1
+        
+        print()
+        print_separator()
+        print(f"✓ Deleted {deleted_count} file(s)")
+        if failed_count > 0:
+            print(f"⚠ Failed to delete {failed_count} file(s)")
+        print()
+        
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Cleanup")
+    except Exception as e:
+        return handle_operation_error(e, "Cleanup")
+
+
 def handle_invalid_choice(choice: str) -> bool:
     """
     Handle invalid menu choice.
@@ -1452,7 +1721,7 @@ def handle_invalid_choice(choice: str) -> bool:
     """
     print()
     print(f"⚠ Invalid choice: '{choice}'")
-    print("Please enter a number between 1 and 7.")
+    print("Please enter a number between 1 and 8.")
     print()
     return prompt_yes_no("Return to menu?", default=True)
 
@@ -1465,9 +1734,9 @@ def run_main_menu_loop() -> None:
     """
     while True:
         display_main_menu()
-        choice = prompt_user("Select option (1-7)", "1").strip()
+        choice = prompt_user("Select option (1-8)", "1").strip()
         
-        if choice == "7":
+        if choice == "8":
             print("Goodbye!")
             return
         
@@ -1485,10 +1754,13 @@ def run_main_menu_loop() -> None:
             should_continue = handle_catalog_option()
         elif choice == "6":
             should_continue = handle_guided_pipeline_option()
+        elif choice == "7":
+            should_continue = handle_cleanup_option()
         else:
             should_continue = handle_invalid_choice(choice)
         
         if not should_continue:
+            print("Goodbye!")
             return
 
 

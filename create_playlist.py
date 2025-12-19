@@ -302,6 +302,49 @@ def export_playlist_copies(
                         if title_tokens and title_tokens.issubset(track_tokens) and len(title_tokens) >= 2:
                             matches.extend(paths)
         
+        # Strategy 6: Check Various Artists / Compilation albums
+        # Handles cases where tracks are in compilation albums under "Various Artists" or similar
+        if not matches:
+            # Common variations of "Various Artists" folder names
+            various_artists_names = [
+                "various artists",
+                "various",
+                "va",
+                "compilation",
+                "compilations",
+                "soundtrack",
+                "soundtracks",
+                "ost",
+            ]
+            
+            # Try matching track in Various Artists folders with same album
+            for va_name in various_artists_names:
+                norm_va = _norm(va_name)
+                # Try with album match first
+                for alt_album in [norm_album, norm_album_flexible]:
+                    if alt_album:
+                        key_va = (norm_va, alt_album, norm_title)
+                        matches.extend(index.get(key_va, []))
+                
+                # If no album match, try just track name match in Various Artists
+                if not matches:
+                    for (a, al, track_name), paths in index.items():
+                        if a == norm_va and track_name == norm_title:
+                            matches.extend(paths)
+                    
+                    # Also try token-based matching
+                    if not matches:
+                        title_tokens = set(norm_title.split())
+                        for (a, al, track_name), paths in index.items():
+                            if a == norm_va:
+                                track_tokens = set(track_name.split())
+                                if title_tokens and title_tokens.issubset(track_tokens) and len(title_tokens) >= 2:
+                                    matches.extend(paths)
+                
+                # If we found matches, stop checking other VA variations
+                if matches:
+                    break
+        
         # Remove duplicates
         seen = set()
         unique_matches = []

@@ -64,9 +64,16 @@ My next step is importing my older music archive into the same drive and buildin
 - **Interactive Workflow**: Step-by-step terminal interface that guides you through the process
 - **Missing Track Handling**: 
   - Automatically create artist directories for missing tracks
-  - Shows Amazon Music links for missing tracks
+  - Shows streaming service links (Amazon Music, Tidal, Deezer, SoundCloud, Qobuz) for missing tracks
   - Confirm skipping tracks that can't be found
+- **Streaming Link Enrichment**: 
+  - Finds links for tracks across multiple streaming platforms
+  - Uses Deezer and iTunes APIs with Odesli/Songlink aggregation
+  - Caches results to avoid redundant API calls
+  - Supports both track and album links
 - **Playlist Creation**: Copy matched tracks to a new folder with numbered filenames in playlist order
+- **Artifacts System**: Saves intermediate JSON files for review and reuse
+- **Staged Workflow**: Run stages independently or use the full guided pipeline
 
 ## Installation
 
@@ -104,21 +111,74 @@ Run the main script for an interactive workflow:
 python3 main.py
 ```
 
-The script presents a main menu with two options:
+The script presents a main menu with eight options:
 
-**Option 1: Scrape playlist and create playlist folder**
-1. Entering the playlist URL
-2. Scraping the playlist
-3. Matching tracks to your library
-4. Handling missing tracks (with Amazon Music links)
-5. Creating the playlist folder
+**Option 1: Scrape playlist (save JSON artifact)**
+- Scrapes a playlist from a URL and saves it as a JSON artifact
+- Prompts for a custom name for the playlist artifact
+- Saves to `artifacts/` directory with format: `YYYY-MM-DD_playlist-name.playlist.json`
 
-**Option 2: Catalog new music into library**
-1. Entering your library location
-2. Entering the drop location (where new music files are)
-3. Choosing to move or copy files
-4. Choosing whether to skip duplicates
-5. Automatically organizing files into `Artist/Album/Track` structure
+**Option 2: Match playlist JSON to library (save match report)**
+- Matches tracks from a playlist JSON artifact against your library
+- Shows which tracks were found and which are missing
+- Saves match report as: `YYYY-MM-DD_playlist-name.match.json`
+
+**Option 3: Enrich missing tracks with streaming links (save enriched report)**
+- Adds streaming service links (Amazon Music, Tidal, Deezer, SoundCloud, Qobuz) to tracks
+- Can enrich all tracks or only missing tracks
+- Uses cached results to avoid redundant API calls
+- Saves enriched report as: `YYYY-MM-DD_playlist-name.enriched.json`
+
+**Option 4: Export playlist folder (from match report or playlist JSON)**
+- Creates a playlist folder with numbered tracks in playlist order
+- Can use either a match report or playlist JSON as input
+- Automatically skips missing tracks if confirmed
+- Creates a manifest.json file with metadata
+
+**Option 5: Catalog new music into library**
+- Scans a drop location for music files
+- Extracts metadata from audio tags or infers from filenames
+- Organizes files into `Artist/Album/Track` structure
+- Supports move or copy operations
+- Handles duplicates intelligently
+
+**Option 6: Run full pipeline (guided)**
+- Runs stages 1-4 end-to-end with guided interaction
+- Handles missing tracks interactively
+- Shows streaming links for missing tracks
+- Offers to create artist directories
+- Allows re-matching after adding tracks
+
+**Option 7: Clean up old playlist artifacts**
+- Lists all saved playlist artifacts grouped by playlist
+- Allows selective deletion of old artifacts
+- Useful for managing disk space
+
+**Option 8: Quit**
+- Exits the program
+
+### Artifacts System
+
+Spindle uses an artifacts system to save intermediate results, allowing you to:
+- Re-run stages independently without starting over
+- Review and modify data between stages
+- Build up playlists incrementally
+- Keep a history of your work
+
+Artifacts are saved in the `artifacts/` directory with the following naming:
+- `YYYY-MM-DD_playlist-name.playlist.json` - Scraped playlist data
+- `YYYY-MM-DD_playlist-name.match.json` - Match results with library
+- `YYYY-MM-DD_playlist-name.enriched.json` - Match results with streaming links
+
+### Staged Workflow
+
+You can run the workflow in stages:
+1. **Stage 1**: Scrape playlist → saves `.playlist.json`
+2. **Stage 2**: Match to library → saves `.match.json`
+3. **Stage 3**: Enrich with links → saves `.enriched.json`
+4. **Stage 4**: Export playlist folder → uses any of the above JSON files
+
+This allows you to pause, review, and resume at any stage.
 
 ### Library Structure
 
@@ -132,53 +192,72 @@ Library/
 
 ### Example Workflows
 
-**Playlist Scraping:**
+**Full Guided Pipeline:**
 ```bash
 $ python3 main.py
 
-============================================================
-WPRB PLAYLIST SCRAPER
-============================================================
+   ███████╗██████╗ ██╗███╗   ██╗██████╗ ██╗     ███████╗
+   ██╔════╝██╔══██╗██║████╗  ██║██╔══██╗██║     ██╔════╝
+   ███████╗██████╔╝██║██╔██╗ ██║██║  ██║██║     █████╗  
+   ╚════██║██╔═══╝ ██║██║╚██╗██║██║  ██║██║     ██╔══╝  
+   ███████║██║     ██║██║ ╚████║██████╔╝███████╗███████╗
+   ╚══════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝
+
+            curated radio → local playlists
 
 ============================================================
 MAIN MENU
 ============================================================
-1. Scrape playlist and create playlist folder
-2. Catalog new music into library
+1. Scrape playlist (save JSON artifact)
+2. Match playlist JSON to library (save match report)
+3. Enrich missing tracks with streaming links (save enriched report)
+4. Export playlist folder (from match report or playlist JSON)
+5. Catalog new music into library
+6. Run full pipeline (guided)
+7. Clean up old playlist artifacts
+8. Quit
 
-Select option (1 or 2) [1]: 1
+Select option (1-8) [1]: 6
 
 ============================================================
-STEP 1: PLAYLIST URL
+GUIDED PIPELINE
 ============================================================
-Enter playlist URL: https://playlists.wprb.com/WPRB/pl/21686552/Lady-Love
-
-============================================================
-STEP 2: SCRAPING PLAYLIST
-============================================================
-Scraping: https://playlists.wprb.com/WPRB/pl/21686552/Lady-Love
-Please wait...
-✓ Successfully scraped playlist: WPRB Princeton 103.3 FM
-✓ Found 31 tracks
-
 ...
+```
+
+**Staged Workflow:**
+```bash
+# Stage 1: Scrape playlist
+Select option (1-8) [1]: 1
+Enter playlist URL: https://playlists.wprb.com/WPRB/pl/21686552/Lady-Love
+Playlist name [lady-love]: 
+✓ Saved to: artifacts/2025-12-17_lady-love.playlist.json
+
+# Stage 2: Match to library
+Select option (1-8) [1]: 2
+Enter path to playlist JSON file: artifacts/2025-12-17_lady-love.playlist.json
+✓ Matched 25 of 31 tracks
+✓ Saved to: artifacts/2025-12-17_lady-love.match.json
+
+# Stage 3: Enrich missing tracks
+Select option (1-8) [1]: 3
+Enter path to match JSON file: artifacts/2025-12-17_lady-love.match.json
+Enrich only missing tracks? [Y/n]: Y
+Enriching tracks: 100%|████████████| 6/6 [00:15<00:00,  2.5s/track]
+✓ Found links for 5 of 6 track(s)
+✓ Saved to: artifacts/2025-12-17_lady-love.enriched.json
+
+# Stage 4: Export playlist folder
+Select option (1-8) [1]: 4
+Enter path to match JSON or playlist JSON file: artifacts/2025-12-17_lady-love.match.json
+Target directory: ~/Desktop
+✓ Playlist created successfully!
+✓ Location: ~/Desktop/2025-12-17 - Lady-Love
 ```
 
 **Music Cataloging:**
 ```bash
-$ python3 main.py
-
-============================================================
-WPRB PLAYLIST SCRAPER
-============================================================
-
-============================================================
-MAIN MENU
-============================================================
-1. Scrape playlist and create playlist folder
-2. Catalog new music into library
-
-Select option (1 or 2) [1]: 2
+Select option (1-8) [1]: 5
 
 ============================================================
 CATALOG NEW MUSIC
@@ -188,6 +267,7 @@ Move files to library? (No = copy files) [Y/n]: Y
 Skip files that already exist in library? [Y/n]: Y
 
 Scanning for audio files...
+Cataloging files: 100%|████████████| 15/15 [00:03<00:00,  4.2file/s]
 ✓ Cataloged: 15 files
 ℹ Skipped: 2 files (duplicates)
 ```
@@ -249,14 +329,21 @@ spindle/
 ├── match_playlist_to_library.py     # Library matching logic
 ├── create_playlist.py                # Playlist folder creation
 ├── catalog_music.py                  # Music cataloging and organization
-├── link_finder.py                    # Amazon Music link finder for missing tracks
+├── link_finder.py                    # Streaming link finder (multi-platform)
 ├── requirements.txt                  # Python dependencies
+├── artifacts/                        # Saved playlist artifacts (JSON files)
+│   ├── YYYY-MM-DD_name.playlist.json
+│   ├── YYYY-MM-DD_name.match.json
+│   └── YYYY-MM-DD_name.enriched.json
+├── link_cache.json                   # Cached streaming link results
 ├── sample_data/                      # Sample playlist data for testing
 │   └── sample_playlist_1
-├── test_scraper.py                   # Tests for scraper
-├── test_match_playlist_to_library.py # Tests for matching
-├── test_create_playlist.py           # Tests for playlist creation
-└── TEST_README.md                    # Testing documentation
+├── tests/                            # Test suite
+│   ├── test_scraper.py
+│   ├── test_match_playlist_to_library.py
+│   ├── test_create_playlist.py
+│   └── TEST_README.md
+└── README.md                         # This file
 ```
 
 ## Features in Detail
@@ -275,10 +362,20 @@ The matching algorithm handles various naming inconsistencies:
 
 When tracks aren't found:
 1. The script lists all missing tracks with candidate suggestions
-2. Shows Amazon Music links for tracks and albums (when available)
+2. Shows streaming service links for tracks and albums (Amazon Music, Tidal, Deezer, SoundCloud, Qobuz) when available
 3. Offers to create artist directories in your library
 4. After you add tracks, re-matches to verify
 5. Allows you to confirm skipping tracks that still can't be found
+
+### Streaming Link Enrichment
+
+The link enrichment feature uses a multi-step process:
+1. **Seed Lookup**: Searches Deezer API for track matches (falls back to iTunes if needed)
+2. **Link Aggregation**: Passes seed URL to Odesli/Songlink API to get links for multiple platforms
+3. **Caching**: Results are cached locally in `link_cache.json` to avoid redundant API calls
+4. **Platform Support**: Returns links for Amazon Music, Tidal, Deezer, SoundCloud, and Qobuz
+
+The enrichment can be run independently (Stage 3) or as part of the guided pipeline.
 
 ### Music Cataloging
 
@@ -322,9 +419,10 @@ The tool supports these audio file formats:
 
 ### Dependencies
 
-- `requests` - HTTP requests for scraping
-- `beautifulsoup4` - HTML parsing
+- `requests` - HTTP requests for scraping and API calls
+- `beautifulsoup4` - HTML parsing for playlist scraping
 - `mutagen` - Audio metadata extraction (for cataloging)
+- `tqdm` - Progress bars for long-running operations
 - `pytest` - Testing framework (optional, for development)
 
 ## Troubleshooting
@@ -362,5 +460,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Built for scraping WPRB playlists (https://playlists.wprb.com)
 - Uses BeautifulSoup for HTML parsing
 - Uses Mutagen for audio metadata extraction
+- Uses Deezer and iTunes APIs for seed URL lookup
+- Uses Odesli/Songlink API for multi-platform link aggregation
 - Designed to work with Spinitron-based playlist systems
 

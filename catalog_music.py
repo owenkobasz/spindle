@@ -24,8 +24,42 @@ except ImportError:
 AUDIO_EXTS = {".mp3", ".m4a", ".flac", ".wav", ".aiff", ".aif", ".ogg", ".opus", ".alac"}
 
 
+def _norm_for_matching(s: str) -> str:
+    """
+    Normalize strings for matching (same as match_playlist_to_library._norm).
+    This ensures cataloged files can be matched correctly.
+    """
+    if s is None:
+        return ""
+    
+    # Normalize unicode (e.g., "I'll" → "I'll" in many cases)
+    s = unicodedata.normalize("NFKD", s)
+    s = s.lower()
+    
+    # Remove common featuring patterns from titles/artists
+    s = re.sub(r"\s*\(feat\.?.*?\)", "", s)
+    s = re.sub(r"\s*\[feat\.?.*?\]", "", s)
+    s = re.sub(r"\s*feat\.?\s+.*$", "", s)
+    
+    # Replace & with and (common difference in file naming)
+    s = s.replace("&", "and")
+    
+    # Drop punctuation (keep letters/numbers/spaces)
+    s = re.sub(r"[^a-z0-9\s]", "", s)
+    
+    # Collapse whitespace
+    s = re.sub(r"\s+", " ", s).strip()
+    
+    return s
+
+
 def _safe_filename(s: str, max_len: int = 180) -> str:
-    """Make a filesystem-friendly filename chunk."""
+    """
+    Make a filesystem-friendly filename chunk.
+    
+    This creates the actual directory/filename, but we also normalize
+    for matching purposes to ensure consistency.
+    """
     s = s or "unknown"
     s = unicodedata.normalize("NFKD", s)
     s = s.replace("/", "-")
@@ -306,7 +340,8 @@ def catalog_music(
     skipped = 0
     errors = []
     
-    for file_path in tqdm(audio_files, desc="Cataloging files", unit="file"):
+    progress_bar = tqdm(audio_files, desc="Cataloging files", unit="file")
+    for file_path in progress_bar:
         result = {
             "source_path": str(file_path),
             "status": "pending",
@@ -333,6 +368,8 @@ def catalog_music(
                     result["error"] = f"Duplicate found: {duplicate}"
                     skipped += 1
                     results.append(result)
+                    # Print skip message
+                    progress_bar.write(f"  ⏭  Skipped: {file_path.name} (duplicate)")
                     continue
             
             # Build destination path: Library/Artist/Album/Track.ext
@@ -358,6 +395,10 @@ def catalog_music(
                     counter += 1
             
             # Move or copy file
+            action = "Moving" if move_files else "Copying"
+            progress_bar.write(f"  {action}: {file_path.name}")
+            progress_bar.write(f"      → {dest_path.relative_to(library_path)}")
+            
             if move_files:
                 shutil.move(str(file_path), str(dest_path))
             else:
@@ -372,6 +413,8 @@ def catalog_music(
             result["error"] = str(e)
             errors.append(f"{file_path}: {e}")
             skipped += 1
+            # Print error message
+            progress_bar.write(f"  ✗ Error: {file_path.name} - {str(e)}")
         
         results.append(result)
     
