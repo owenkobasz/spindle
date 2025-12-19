@@ -30,6 +30,124 @@ from catalog_music import catalog_music
 # ----------------------------
 
 ARTIFACTS_DIR = Path("artifacts")
+SETTINGS_FILE = Path("spindle_settings.json")
+
+
+# ----------------------------
+# Settings management
+# ----------------------------
+
+DEFAULT_SETTINGS = {
+    "library": {
+        "base_folder": "/Volumes/Music Library",
+        "library_subpath": ""
+    },
+    "streaming_service": "amazon_music",  # "amazon_music" or "tidal"
+    "catalog": {
+        "drop_location": "",
+        "move_files": True,
+        "skip_duplicates": True
+    },
+    "export": {
+        "default_target_dir": ""
+    }
+}
+
+
+def load_settings() -> dict:
+    """
+    Load settings from file, returning defaults if file doesn't exist.
+    
+    Returns:
+        Settings dictionary with defaults merged
+    """
+    if not SETTINGS_FILE.exists():
+        return DEFAULT_SETTINGS.copy()
+    
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            user_settings = json.load(f)
+        
+        # Merge with defaults to ensure all keys exist
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update(user_settings)
+        
+        # Deep merge nested dictionaries
+        if "library" in user_settings:
+            settings["library"].update(user_settings["library"])
+        if "catalog" in user_settings:
+            settings["catalog"].update(user_settings["catalog"])
+        if "export" in user_settings:
+            settings["export"].update(user_settings["export"])
+        
+        return settings
+    except Exception as e:
+        print(f"Warning: Could not load settings: {e}")
+        print("Using default settings.")
+        return DEFAULT_SETTINGS.copy()
+
+
+def save_settings(settings: dict) -> None:
+    """
+    Save settings to file.
+    
+    Args:
+        settings: Settings dictionary to save
+    """
+    try:
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+
+
+def get_setting(key_path: str, default=None) -> any:
+    """
+    Get a setting value using dot notation (e.g., "library.base_folder").
+    
+    Args:
+        key_path: Dot-separated path to setting (e.g., "library.base_folder")
+        default: Default value if setting not found
+    
+    Returns:
+        Setting value or default
+    """
+    settings = load_settings()
+    keys = key_path.split('.')
+    value = settings
+    
+    for key in keys:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            return default
+    
+    return value if value != "" else default
+
+
+def set_setting(key_path: str, value: any) -> None:
+    """
+    Set a setting value using dot notation and save to file.
+    
+    Args:
+        key_path: Dot-separated path to setting (e.g., "library.base_folder")
+        value: Value to set
+    """
+    settings = load_settings()
+    keys = key_path.split('.')
+    
+    # Navigate to the parent dict
+    current = settings
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = current[key]
+    
+    # Set the value
+    current[keys[-1]] = value
+    
+    # Save
+    save_settings(settings)
 
 
 def safe_slug(text: str) -> str:
@@ -61,6 +179,57 @@ def safe_slug(text: str) -> str:
     slug = slug.strip('-')
     
     return slug or "unknown"
+
+
+def extract_stem_from_playlist_path(playlist_path: Path) -> str:
+    """
+    Extract the artifact stem from a playlist JSON file path.
+    
+    This ensures consistent naming across playlist, match, and enriched files.
+    For example: "running-redlights.playlist.json" -> "running-redlights"
+    
+    Args:
+        playlist_path: Path to playlist JSON file
+    
+    Returns:
+        Stem extracted from filename (without .playlist.json suffix)
+    """
+    stem = playlist_path.stem  # Gets "name.playlist" from "name.playlist.json"
+    
+    # Remove .playlist suffix if present
+    if stem.endswith(".playlist"):
+        stem = stem[:-9]  # Remove ".playlist"
+    
+    return stem
+
+
+def extract_stem_from_artifact_path(artifact_path: Path) -> str:
+    """
+    Extract the base artifact stem from any artifact file path (playlist, match, or enriched).
+    
+    This ensures consistent naming across all artifact types.
+    For example: 
+    - "running-redlights.playlist.json" -> "running-redlights"
+    - "running-redlights.match.json" -> "running-redlights"
+    - "running-redlights.enriched.json" -> "running-redlights"
+    
+    Args:
+        artifact_path: Path to any artifact JSON file
+    
+    Returns:
+        Base stem extracted from filename (without type suffix)
+    """
+    stem = artifact_path.stem  # Gets "name.type" from "name.type.json"
+    
+    # Remove type suffixes if present
+    if stem.endswith(".playlist"):
+        stem = stem[:-9]  # Remove ".playlist"
+    elif stem.endswith(".match"):
+        stem = stem[:-6]  # Remove ".match"
+    elif stem.endswith(".enriched"):
+        stem = stem[:-9]  # Remove ".enriched"
+    
+    return stem
 
 
 def derive_artifact_stem(meta: dict, custom_name: str = None) -> str:
@@ -217,23 +386,31 @@ def prompt_yes_no(prompt: str, default: bool = True) -> bool:
 
 def get_library_path() -> tuple[str, str]:
     """
-    Prompt user for library location with default of /Volumes/Music Library.
+    Get library location from settings if valid, otherwise prompt user.
     
     Returns:
         Tuple of (base_folder, library_subpath)
     """
+    # Get settings
+    base = get_setting("library.base_folder", "/Volumes/Music Library")
+    subpath = get_setting("library.library_subpath", "")
+    
+    # Check if base folder exists and is valid
+    base_path = Path(base).expanduser()
+    if base_path.exists():
+        # Settings are valid, use them silently
+        return str(base_path), subpath
+    
+    # Settings invalid or missing, prompt user
     print_title("LIBRARY LOCATION")
     print("Enter the path to your music library.")
-    print("Press Enter to use the default, or enter a different path.")
+    print("Press Enter to use the saved default, or enter a different path.")
     print()
     
-    # Default library location
-    default_base = "/Volumes/Music Library"
-    
-    base = prompt_user("Base folder", default_base)
+    base = prompt_user("Base folder", base)
     if not base:
         # If user cleared the default, use it anyway
-        base = default_base
+        base = get_setting("library.base_folder", "/Volumes/Music Library")
     
     # Check if base folder exists
     base_path = Path(base).expanduser()
@@ -242,7 +419,11 @@ def get_library_path() -> tuple[str, str]:
         sys.exit(1)
     
     # Ask for subpath if base might not be the library root
-    subpath = prompt_user("Library subpath (press Enter if base folder IS the library)", "")
+    subpath = prompt_user("Library subpath (press Enter if base folder IS the library)", subpath)
+    
+    # Save to settings
+    set_setting("library.base_folder", base)
+    set_setting("library.library_subpath", subpath)
     
     return str(base_path), subpath
 
@@ -518,21 +699,61 @@ def catalog_new_music(base_folder: str, library_subpath: str) -> None:
         base_folder: Base folder containing the library
         library_subpath: Subpath to the library within base_folder
     """
-    print_title("CATALOG NEW MUSIC")
-    print("This will scan a drop location for music files and organize them")
-    print("into your library structure (Artist/Album/Track).")
-    print()
+    # Get settings
+    drop_location = get_setting("catalog.drop_location", "")
+    move_files = get_setting("catalog.move_files", True)
+    skip_duplicates = get_setting("catalog.skip_duplicates", True)
     
-    # Get drop location
-    drop_location = prompt_user("Enter drop location (where new music files are)")
-    if not drop_location:
-        print("Error: Drop location is required.")
-        sys.exit(1)
+    # Check if drop location is valid
+    drop_path = None
+    if drop_location:
+        drop_path = Path(drop_location).expanduser()
+        if not drop_path.exists():
+            drop_path = None
     
-    drop_path = Path(drop_location).expanduser()
-    if not drop_path.exists():
-        print(f"Error: Drop location does not exist: {drop_path}")
-        sys.exit(1)
+    # If all settings are valid, use them silently
+    if drop_path:
+        print_title("CATALOG NEW MUSIC")
+        print(f"Using saved settings:")
+        print(f"  Drop location: {drop_path}")
+        print(f"  Move files: {move_files}")
+        print(f"  Skip duplicates: {skip_duplicates}")
+        print()
+    else:
+        # Settings invalid or missing, prompt user
+        print_title("CATALOG NEW MUSIC")
+        print("This will scan a drop location for music files and organize them")
+        print("into your library structure (Artist/Album/Track).")
+        print()
+        
+        drop_location = prompt_user("Enter drop location (where new music files are)", drop_location)
+        if not drop_location:
+            print("Error: Drop location is required.")
+            sys.exit(1)
+        
+        drop_path = Path(drop_location).expanduser()
+        if not drop_path.exists():
+            print(f"Error: Drop location does not exist: {drop_path}")
+            sys.exit(1)
+        
+        # Save drop location to settings
+        set_setting("catalog.drop_location", drop_location)
+        
+        # Get preferences from settings
+        default_move = get_setting("catalog.move_files", True)
+        default_skip = get_setting("catalog.skip_duplicates", True)
+        
+        # Ask about move vs copy
+        move_files = prompt_yes_no("Move files to library? (No = copy files)", default=default_move)
+        
+        # Ask about duplicates
+        skip_duplicates = prompt_yes_no("Skip files that already exist in library?", default=default_skip)
+        
+        # Save preferences if changed
+        if move_files != default_move:
+            set_setting("catalog.move_files", move_files)
+        if skip_duplicates != default_skip:
+            set_setting("catalog.skip_duplicates", skip_duplicates)
     
     # Calculate library root path
     library_root_path = Path(base_folder)
@@ -543,17 +764,6 @@ def catalog_new_music(base_folder: str, library_subpath: str) -> None:
     if not library_root_path.exists():
         print(f"Error: Library root does not exist: {library_root_path}")
         sys.exit(1)
-    
-    print()
-    print(f"Drop location: {drop_path}")
-    print(f"Library root: {library_root_path}")
-    print()
-    
-    # Ask about move vs copy
-    move_files = prompt_yes_no("Move files to library? (No = copy files)", default=True)
-    
-    # Ask about duplicates
-    skip_duplicates = prompt_yes_no("Skip files that already exist in library?", default=True)
     
     print()
     print("Scanning for audio files...")
@@ -745,7 +955,7 @@ def _scrape_and_prompt_name(url: str, artifacts_dir: Path, prompt_for_name: bool
     # Save playlist JSON
     save_json(playlist_data, output_path)
     
-    print(f"✓ Saved to: {output_path}")
+    print(f"✓ Saved to: {output_path.resolve()}")
     print()
     
     return playlist_data, output_path
@@ -781,7 +991,7 @@ def run_scrape(url: str, artifacts_dir: Path, custom_name: str = None) -> Path:
         
         print(f"✓ Successfully scraped playlist: {playlist_title}")
         print(f"✓ Found {track_count} tracks")
-        print(f"✓ Saved to: {output_path}")
+        print(f"✓ Saved to: {output_path.resolve()}")
         print()
         
         return output_path
@@ -833,8 +1043,8 @@ def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, 
         missing = match_result["summary"]["missing"]
         total = match_result["summary"]["total_tracks"]
         
-        # Derive artifact filename (use same stem as playlist)
-        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        # Extract stem from playlist JSON filename to maintain consistent naming
+        stem = extract_stem_from_playlist_path(playlist_json_path)
         output_path = artifacts_dir / f"{stem}.match.json"
         
         # Save match report
@@ -860,7 +1070,7 @@ def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, 
                 print()
         else:
             print("✓ All tracks found in library!")
-        print(f"✓ Saved to: {output_path}")
+        print(f"✓ Saved to: {output_path.resolve()}")
         print()
         
         return output_path
@@ -868,6 +1078,53 @@ def run_match(playlist_json_path: Path, base_folder: str, library_subpath: str, 
     except Exception as e:
         print(f"Error matching tracks: {e}")
         raise
+
+
+def prompt_streaming_service(skip_if_set: bool = True) -> str:
+    """
+    Get streaming service from settings if valid, otherwise prompt user.
+    
+    Args:
+        skip_if_set: If True and valid setting exists, return it without prompting
+    
+    Returns:
+        Selected service key: "amazon_music" or "tidal"
+    """
+    # Get saved preference
+    saved_service = get_setting("streaming_service", "amazon_music")
+    
+    # Validate setting
+    if saved_service in ("amazon_music", "tidal"):
+        if skip_if_set:
+            # Valid setting exists, use it silently
+            return saved_service
+    
+    # Invalid setting or skip_if_set is False, prompt user
+    default_choice = "1" if saved_service == "amazon_music" else "2"
+    
+    print_title("SELECT STREAMING SERVICE")
+    print("Choose which streaming service links you want to receive:")
+    print("1. Amazon Music")
+    print("2. Tidal")
+    print()
+    
+    while True:
+        choice = prompt_user("Select service (1 or 2)", default_choice).strip()
+        if choice == "1":
+            selected = "amazon_music"
+            # Save preference
+            if selected != saved_service:
+                set_setting("streaming_service", selected)
+            return selected
+        elif choice == "2":
+            selected = "tidal"
+            # Save preference
+            if selected != saved_service:
+                set_setting("streaming_service", selected)
+            return selected
+        else:
+            print("Invalid choice. Please enter 1 for Amazon Music or 2 for Tidal.")
+            print()
 
 
 def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = True) -> Path:
@@ -883,6 +1140,12 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         Path to saved enriched JSON file
     """
     print_title("STAGE 3: ENRICHING TRACKS WITH STREAMING LINKS")
+    
+    # Get streaming service (skip prompt if valid setting exists)
+    selected_service = prompt_streaming_service(skip_if_set=True)
+    service_display_name = "Amazon Music" if selected_service == "amazon_music" else "Tidal"
+    print(f"✓ Using streaming service: {service_display_name}")
+    print()
     
     # Load match result
     match_result = load_json(match_json_path)
@@ -905,11 +1168,12 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
     enrich_type = "MISSING TRACKS" if missing_only else "ALL TRACKS"
     print_title(f"{enrich_type} TO ENRICH ({len(tracks_to_enrich)} tracks/{total_tracks})")
     
-    print(f"Enriching {len(tracks_to_enrich)} track(s) with streaming links...")
+    print(f"Enriching {len(tracks_to_enrich)} track(s) with {service_display_name} links...")
     print()
     
     session = requests.Session()
     links_found = 0
+    tracks_without_links = []
     
     try:
         # Use tqdm to show progress bar
@@ -926,35 +1190,55 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
                     use_cache=True
                 )
                 
-                # Attach link result to track
+                # Attach link result to track, filtered by selected service
                 if link_result.get("ok"):
-                    track["share_links"] = link_result.get("aggregated", {}).get("targets", {})
+                    all_targets = link_result.get("aggregated", {}).get("targets", {})
+                    
+                    # Filter to only include the selected service
+                    filtered_targets = {}
+                    if selected_service in all_targets and all_targets[selected_service]:
+                        filtered_targets[selected_service] = all_targets[selected_service]
+                    
+                    track["share_links"] = filtered_targets
                     track["songlink_page"] = link_result.get("aggregated", {}).get("page_url")
                     track["link_seed"] = link_result.get("seed")
                     
-                    # Store album links if available
+                    # Store album links if available (only Amazon Music currently supports this)
                     album_aggregated = link_result.get("album_aggregated", {})
                     if album_aggregated:
-                        track["album_share_links"] = album_aggregated.get("targets", {})
+                        album_targets = album_aggregated.get("targets", {})
+                        # Filter to only include the selected service
+                        filtered_album_targets = {}
+                        if selected_service in album_targets and album_targets[selected_service]:
+                            filtered_album_targets[selected_service] = album_targets[selected_service]
+                        track["album_share_links"] = filtered_album_targets
                     else:
                         track["album_share_links"] = {}
                     
-                    links_found += 1
+                    if filtered_targets:
+                        links_found += 1
+                    else:
+                        # Track link lookup succeeded but no links found for selected service
+                        tracks_without_links.append(track)
                 else:
                     track["share_links"] = {}
                     track["album_share_links"] = {}
                     track["songlink_page"] = None
                     track["link_seed"] = None
+                    # Track link lookup failed
+                    tracks_without_links.append(track)
             except Exception:
                 # Silently handle errors
                 track["share_links"] = {}
                 track["album_share_links"] = {}
                 track["songlink_page"] = None
                 track["link_seed"] = None
+                # Track error during link lookup
+                tracks_without_links.append(track)
         
-        # Derive artifact filename (use same stem as match)
-        playlist_data = match_result.get("playlist_data", {})
-        stem = derive_artifact_stem(playlist_data.get("meta", {}))
+        # Extract stem from match JSON filename to maintain consistent naming
+        # The match file stem should match the playlist file stem
+        stem = extract_stem_from_artifact_path(match_json_path)
         output_path = artifacts_dir / f"{stem}.enriched.json"
         
         # Save enriched match report
@@ -962,7 +1246,7 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         
         print()
         print(f"✓ Found links for {links_found} of {len(tracks_to_enrich)} track(s)")
-        print(f"✓ Saved to: {output_path}")
+        print(f"✓ Saved to: {output_path.resolve()}")
         print()
         
         # Print enriched track list with links
@@ -971,6 +1255,20 @@ def run_links(match_json_path: Path, artifacts_dir: Path, missing_only: bool = T
         
         # Print album links summary
         print_album_links_summary(tracks_to_enrich)
+        
+        # Print tracks where links could not be found
+        if tracks_without_links:
+            print_title(f"TRACKS WITHOUT LINKS ({len(tracks_without_links)} tracks)")
+            for track in tracks_without_links:
+                artist = track.get('artist', 'Unknown Artist')
+                album = track.get('album', '')
+                # Use album if available, otherwise use song title
+                if album:
+                    print(f"  {artist} - {album}")
+                else:
+                    song = track.get('song', 'Unknown Song')
+                    print(f"  {artist} - {song}")
+            print()
         
         return output_path
         
@@ -1165,20 +1463,39 @@ def run_guided_pipeline(base_folder: str, library_subpath: str, artifacts_dir: P
             print()
     
     # Step 4: Get target location and export
-    print_title("STEP 4: CREATE PLAYLIST")
-    print("Enter the target location where the playlist folder should be created.")
-    print("Example: ~/Desktop or /Users/username/Desktop")
-    print()
+    default_target = get_setting("export.default_target_dir", "")
     
-    target_dir = prompt_user("Target directory")
-    if not target_dir:
-        print("Error: Target directory is required.")
-        sys.exit(1)
+    # Check if target directory is valid
+    target_path = None
+    if default_target:
+        target_path = Path(default_target).expanduser()
+        if not target_path.exists():
+            target_path = None
     
-    target_path = Path(target_dir).expanduser()
-    if not target_path.exists():
-        print(f"Error: Target directory does not exist: {target_path}")
-        sys.exit(1)
+    if target_path:
+        # Valid setting exists, use it silently
+        print_title("STEP 4: CREATE PLAYLIST")
+        print(f"Using saved target directory: {target_path}")
+        print()
+    else:
+        # Settings invalid or missing, prompt user
+        print_title("STEP 4: CREATE PLAYLIST")
+        print("Enter the target location where the playlist folder should be created.")
+        print("Example: ~/Desktop or /Users/username/Desktop")
+        print()
+        
+        target_dir = prompt_user("Target directory", default_target)
+        if not target_dir:
+            print("Error: Target directory is required.")
+            sys.exit(1)
+        
+        target_path = Path(target_dir).expanduser()
+        if not target_path.exists():
+            print(f"Error: Target directory does not exist: {target_path}")
+            sys.exit(1)
+        
+        # Save to settings
+        set_setting("export.default_target_dir", target_dir)
     
     # Stage 4: Export (use match report)
     run_export(match_json_path, base_folder, library_subpath, target_path, overwrite=False)
@@ -1349,9 +1666,29 @@ def prompt_file_path(prompt_text: str, file_type: str = "file", must_exist: bool
         artifacts = list_artifacts(expected_json_type)
         if artifacts:
             print()
-            print(f"Available {expected_json_type or 'artifact'} files in {ARTIFACTS_DIR}:")
+            print(f"Available {expected_json_type or 'artifact'} files in {ARTIFACTS_DIR.resolve()}:")
             for i, artifact in enumerate(artifacts[:10], 1):  # Show up to 10 most recent
-                print(f"  {i}. {artifact.name}")
+                # Show modification time to help identify recently created files
+                try:
+                    mtime = artifact.stat().st_mtime
+                    time_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # For match files, try to show playlist title for easier identification
+                    extra_info = ""
+                    if expected_json_type == "match":
+                        try:
+                            data = load_json(artifact)
+                            playlist_data = data.get("playlist_data", {})
+                            if playlist_data:
+                                playlist_title = playlist_data.get("meta", {}).get("playlist_title", "")
+                                if playlist_title:
+                                    extra_info = f" | Playlist: {playlist_title}"
+                        except Exception:
+                            pass  # Silently ignore errors loading JSON
+                    
+                    print(f"  {i}. {artifact.name} (modified: {time_str}{extra_info})")
+                except Exception:
+                    print(f"  {i}. {artifact.name}")
             if len(artifacts) > 10:
                 print(f"  ... and {len(artifacts) - 10} more")
             print()
@@ -1460,7 +1797,8 @@ def display_main_menu() -> None:
     print("5. Catalog new music into library")
     print("6. Run full pipeline (guided)")
     print("7. Clean up old playlist artifacts")
-    print("8. Quit")
+    print("8. Configure settings")
+    print("9. Quit")
     print()
 
 
@@ -1605,17 +1943,35 @@ def handle_export_option() -> bool:
         
         base_folder, library_subpath = get_library_path()
         
-        target_dir_str = prompt_user("Enter target directory for playlist folder")
-        if not target_dir_str:
-            print("Error: Target directory is required.")
-            return prompt_yes_no("Return to main menu?", default=True)
+        default_target = get_setting("export.default_target_dir", "")
         
-        target_dir = Path(target_dir_str).expanduser()
-        try:
-            target_dir = validate_file_path(target_dir, "directory")
-        except FileNotFoundError as e:
-            print(f"Error: {e}")
-            return prompt_yes_no("Return to main menu?", default=True)
+        # Check if target directory is valid
+        target_dir = None
+        if default_target:
+            try:
+                target_dir = validate_file_path(Path(default_target).expanduser(), "directory")
+            except FileNotFoundError:
+                target_dir = None
+        
+        if target_dir:
+            # Valid setting exists, use it silently
+            print(f"Using saved target directory: {target_dir}")
+            print()
+        else:
+            # Settings invalid or missing, prompt user
+            target_dir_str = prompt_user("Enter target directory for playlist folder", default_target)
+            if not target_dir_str:
+                print("Error: Target directory is required.")
+                return prompt_yes_no("Return to main menu?", default=True)
+            
+            try:
+                target_dir = validate_file_path(Path(target_dir_str).expanduser(), "directory")
+            except FileNotFoundError as e:
+                print(f"Error: {e}")
+                return prompt_yes_no("Return to main menu?", default=True)
+            
+            # Save to settings
+            set_setting("export.default_target_dir", target_dir_str)
         
         overwrite = prompt_yes_no("Overwrite existing files?", default=False)
         run_export(input_path, base_folder, library_subpath, target_dir, overwrite=overwrite)
@@ -1776,6 +2132,91 @@ def handle_cleanup_option() -> bool:
         return handle_operation_error(e, "Cleanup")
 
 
+def handle_settings_option() -> bool:
+    """
+    Handle menu option 8: Configure settings.
+    
+    Returns:
+        True if should continue menu loop, False if should exit
+    """
+    try:
+        print_title("CONFIGURE SETTINGS")
+        settings = load_settings()
+        
+        while True:
+            print("Current settings:")
+            print()
+            print(f"1. Library base folder: {settings['library']['base_folder']}")
+            print(f"2. Library subpath: {settings['library']['library_subpath'] or '(none)'}")
+            print(f"3. Streaming service: {settings['streaming_service'].replace('_', ' ').title()}")
+            print(f"4. Catalog drop location: {settings['catalog']['drop_location'] or '(not set)'}")
+            print(f"5. Catalog move files: {settings['catalog']['move_files']}")
+            print(f"6. Catalog skip duplicates: {settings['catalog']['skip_duplicates']}")
+            print(f"7. Export default target directory: {settings['export']['default_target_dir'] or '(not set)'}")
+            print("8. Return to main menu")
+            print()
+            
+            choice = prompt_user("Select setting to change (1-8)", "8").strip()
+            
+            if choice == "8":
+                break
+            elif choice == "1":
+                new_value = prompt_user("Enter library base folder", settings['library']['base_folder'])
+                if new_value:
+                    settings['library']['base_folder'] = new_value
+                    save_settings(settings)
+                    print("✓ Setting saved.")
+            elif choice == "2":
+                new_value = prompt_user("Enter library subpath (press Enter for none)", settings['library']['library_subpath'])
+                settings['library']['library_subpath'] = new_value
+                save_settings(settings)
+                print("✓ Setting saved.")
+            elif choice == "3":
+                print("1. Amazon Music")
+                print("2. Tidal")
+                service_choice = prompt_user("Select service (1 or 2)", "1" if settings['streaming_service'] == "amazon_music" else "2").strip()
+                if service_choice == "1":
+                    settings['streaming_service'] = "amazon_music"
+                elif service_choice == "2":
+                    settings['streaming_service'] = "tidal"
+                else:
+                    print("Invalid choice.")
+                    continue
+                save_settings(settings)
+                print("✓ Setting saved.")
+            elif choice == "4":
+                new_value = prompt_user("Enter catalog drop location", settings['catalog']['drop_location'])
+                settings['catalog']['drop_location'] = new_value
+                save_settings(settings)
+                print("✓ Setting saved.")
+            elif choice == "5":
+                new_value = prompt_yes_no("Move files to library? (No = copy files)", settings['catalog']['move_files'])
+                settings['catalog']['move_files'] = new_value
+                save_settings(settings)
+                print("✓ Setting saved.")
+            elif choice == "6":
+                new_value = prompt_yes_no("Skip files that already exist in library?", settings['catalog']['skip_duplicates'])
+                settings['catalog']['skip_duplicates'] = new_value
+                save_settings(settings)
+                print("✓ Setting saved.")
+            elif choice == "7":
+                new_value = prompt_user("Enter export default target directory", settings['export']['default_target_dir'])
+                settings['export']['default_target_dir'] = new_value
+                save_settings(settings)
+                print("✓ Setting saved.")
+            else:
+                print("Invalid choice.")
+            
+            print()
+        
+        return True
+        
+    except (KeyboardInterrupt, SystemExit):
+        return handle_operation_error(SystemExit(), "Settings")
+    except Exception as e:
+        return handle_operation_error(e, "Settings")
+
+
 def handle_invalid_choice(choice: str) -> bool:
     """
     Handle invalid menu choice.
@@ -1788,7 +2229,7 @@ def handle_invalid_choice(choice: str) -> bool:
     """
     print()
     print(f"⚠ Invalid choice: '{choice}'")
-    print("Please enter a number between 1 and 8.")
+    print("Please enter a number between 1 and 9.")
     print()
     return prompt_yes_no("Return to menu?", default=True)
 
@@ -1801,9 +2242,9 @@ def run_main_menu_loop() -> None:
     """
     while True:
         display_main_menu()
-        choice = prompt_user("Select option (1-8)", "1").strip()
+        choice = prompt_user("Select option (1-9)", "1").strip()
         
-        if choice == "8":
+        if choice == "9":
             print("Goodbye!")
             return
         
@@ -1823,6 +2264,8 @@ def run_main_menu_loop() -> None:
             should_continue = handle_guided_pipeline_option()
         elif choice == "7":
             should_continue = handle_cleanup_option()
+        elif choice == "8":
+            should_continue = handle_settings_option()
         else:
             should_continue = handle_invalid_choice(choice)
         

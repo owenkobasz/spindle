@@ -44,3 +44,4 @@ test_location/
 *.log
 link_cache.json
 artifacts/
+spindle_settings.json
